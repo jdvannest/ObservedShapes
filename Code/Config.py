@@ -71,11 +71,18 @@ if rewrite:
     for s in Sims:
         os.system(f'mkdir ../Images/{s}.BW')
         for h in Sims[s]['halos']: os.system(f'mkdir ../Images/{s}.BW/{h}')
+        os.system(f'rm ../Data/{s}.BW.Images.pickle')
+        os.system(f'rm ../Data/{s}.BW.Profiles.pickle')
+        data = {}
+        for h in Sims[s]['halos']: data[str(h)] = {}
+        pickle.dump(data,open(f'../Data/{s}.BW.Images.pickle','wb'))
+        pickle.dump(data,open(f'../Data/{s}.BW.Profiles.pickle','wb'))
 
 Sims = {
     'storm' : {
-        'path' : marvel_path+'storm.cosmo25cmb.4096g1HsbBH/storm.cosmo25cmb.4096g1HsbBH.004096/storm.cosmo25cmb.4096g1HsbBH.004096',
-        'halos' : [1,2,3,4,5,6,7,8,10,11,12,14,15,19,21,23,25,41,42,49,61,82,262,272,273,472,541]
+        'path' : marvel_path+'storm.cosmo25cmb.4096g1HsbBH/storm.cosmo25cmb.4096g1HsbBH.004096',
+        #'halos' : [1,2,3,4,5,6,7,8,10,11,12,14,15,18,21,23,35,42,48,49,61,88,125,262,272,273,472,541]
+        'halos' : [1,2,3,4,5,6,7,8,10,11,12,14,15,18,21,23,35,48,49,61,88,125,133,175,235,262,272,300,541]#42 is weird, idk why
     }
 }
 
@@ -88,3 +95,9 @@ if rewrite:
     for s in Sims:
         os.system(f'mkdir ../Images/{s}.SB')
         for h in Sims[s]['halos']: os.system(f'mkdir ../Images/{s}.SB/{h}')
+        os.system(f'rm ../Data/{s}.SB.Images.pickle')
+        os.system(f'rm ../Data/{s}.SB.Profiles.pickle')
+        data = {}
+        for h in Sims[s]['halos']: data[str(h)] = {}
+        pickle.dump(data,open(f'../Data/{s}.SB.Images.pickle','wb'))
+        pickle.dump(data,open(f'../Data/{s}.SB.Profiles.pickle','wb'))

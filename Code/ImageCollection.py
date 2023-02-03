@@ -1,24 +1,27 @@
-import argparse,pickle,os,pynbody,sys,time
+import argparse,os,pickle,pymp,pynbody,sys,time,warnings
 import numpy as np
 import matplotlib.pylab as plt
 from pynbody.plot.sph import image
-from multiprocessing import Manager,Pool
 def myprint(string,clear=False):
     if clear:
         sys.stdout.write("\033[F")
         sys.stdout.write("\033[K") 
     print(string)
+def sersic(r, mueff, reff, n):
+    return mueff + 2.5*(0.868*n-0.142)*((r/reff)**(1./n) - 1)
+warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser(description='Collect images of all resolved halos from a given simulation. Images will be generated across all orientations.')
 parser.add_argument('-f','--feedback',choices=['BW','SB'],default='BW',help='Feedback Model')
 parser.add_argument('-s','--simulation',choices=['cptmarvel','elektra','storm','rogue'],required=True,help='Simulation to analyze')
 parser.add_argument('-n','--numproc',type=int,required=True,help='Number of processors to use')
 parser.add_argument('-o','--overwrite',action='store_true',help='Overwrite existing images')
+parser.add_argument('-v','--verbose',action='store_true',help='Print halo IDs being analyzed')
 args = parser.parse_args()
 
 SimInfo = pickle.load(open(f'SimulationInfo.{args.feedback}.pickle','rb'))
 simpath = SimInfo[args.simulation]['path']
-halos = SimInfo[args.simulation]['path']
+halos = SimInfo[args.simulation]['halos']
 dx,dy = 30,30 #Angular resolution of rotations
 #Check if all halos in sim have been completed
 if f'{halos[-1]}.x{180-dx:03d}.y{360-dy}.png' in os.listdir(f'../Images/{args.simulation}.{args.feedback}/{halos[-1]}/') and not args.overwrite:
@@ -30,43 +33,69 @@ tstart = time.time()
 sim = pynbody.load(simpath)
 sim.physical_units()
 h = sim.halos()
+ImageData = pymp.shared.dict()
+SBData = pymp.shared.dict()
 myprint(f'{args.simulation} loaded.',clear=True)
 
-with Manager() as manager:
-    prog = manager.list([0])
-    print(f'\tGenerating images: {round(prog[0]/len(halos)*100,2)}%')
-    def GenerateImages(hid):
-        #Check if halo has been complete
-        if f'{hid}.x{180-dx:03d}.y{360-dy}.png' in os.listdir(f'../Images/{args.simulation}.{args.feedback}/{hid}/') and not args.overwrite:
-            prog[0]+=1
-            myprint(f'\tGenerating images: {round(prog/len(halos)*100,2)}%',clear=True)
-            return
+prog=pymp.shared.array((1,),dtype=int)
+print(f'\tGenerating images: {round(prog[0]/len(halos)*100,2)}%')
+with pymp.Parallel(args.numproc) as pl:
+    for i in pl.xrange(len(halos)):
+        t_start_current = time.time()
+        if args.verbose: print(f'\tAnalyzing {halos[i]}...')
+        hid = halos[i]
         halo = h[hid]
-        pynbody.analys.angmom.faceon(halo)
+        pynbody.analysis.angmom.faceon(halo)
         Rhalf = pynbody.analysis.luminosity.half_light_r(halo)
-        width = 3*Rhalf
+        width = 6*Rhalf
         ImageSpace = pynbody.filt.Sphere(width*np.sqrt(2)*1.01)
-        xrotation,yrotation = 0,0
-
+        current_image = {}
+        current_sb = {}
+        xrotation = 0
         while xrotation*dx<180:
+            yrotation = 0
             while yrotation*dy<360:
-                if f'{hid}.x{xrotation*dx:03d}.y{yrotation*dy:03d}.png' not in os.listdir(f'../Images/{args.simulation}.{args.feedback}/{hid}/') or args.overwrite:
-                    f = plt.figure(frameon=False)
-                    f.set_size_inches(10,10)
-                    ax = plt.Axes(f, [0., 0., 1., 1.])
-                    ax.set_axis_off()
-                    f.add_axes(ax)
-                    im = image(sim[ImageSpace].s,qty='v_lum_den',width=width,subplot=ax,units='kpc^-2',resolution=1000,show_cbar=False)
-                    f.savefig(f'../Images/{args.simulation}.{args.feedback}/{hid}/{hid}.x{xrotation*dx:03d}.y{yrotation*dy:03d}.png')
-                    plt.close()
+                #Find V-band SB at Reff
+                current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}'] = {}
+                current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['Rhalf'] = Rhalf
+                try:
+                    prof = pynbody.analysis.profile.Profile(halo.s,type='lin',min=.25,max=5*Rhalf,ndim=2,nbins=101)
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['sb,v'] = prof['sb,v']
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['v_lum_den'] = prof['v_lum_den']
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['rbins'] = prof['rbins']
+                except:
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['sb,v'] = np.NaN
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['v_lum_den'] = np.NaN
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['rbins'] = np.NaN
+                #Generate V-band SB image
+                f = plt.figure(frameon=False)
+                f.set_size_inches(10,10)
+                ax = plt.Axes(f, [0., 0., 1., 1.])
+                ax.set_axis_off()
+                f.add_axes(ax)
+                im = image(sim[ImageSpace].s,qty='v_lum_den',width=width,subplot=ax,units='kpc^-2',resolution=1000,show_cbar=False)
+                f.savefig(f'../Images/{args.simulation}.{args.feedback}/{hid}/{hid}.x{xrotation*dx:03d}.y{yrotation*dy:03d}.png')
+                plt.close()
+                #Store data
+                current_image[f'x{xrotation*dx:03d}y{yrotation*dy:03d}'] = im
+                #Progress to next orientation
+                prog[0]+=1
+                if not args.verbose: myprint(f'\tGenerating images: {round(prog[0]/(len(halos)*72)*100,2)}%',clear=True)
                 halo.rotate_y(dy)
                 yrotation+=1
             halo.rotate_x(dx)
             xrotation+=1
-        prog[0]+=1
-        myprint(f'\tGenerating images: {round(prog[0]/len(halos)*100,2)}%',clear=True)
-    p = Pool(args.numproc)
-    p.map(GenerateImages,halos)
+        ImageData[str(hid)] = current_image
+        SBData[str(hid)] = current_sb
+        t_end_current = time.time()
+        if args.verbose: print(f'\t\t{hid} done in {round((t_end_current-t_start_current)/60,2)} minutes.')
 
+ImageFile = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.Images.pickle','rb'))
+SBFile = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.Profiles.pickle','rb'))
+for halo in halos:
+    ImageFile[str(halo)] = ImageData[str(halo)]
+    SBFile[str(halo)] = SBData[str(halo)]
+    pickle.dump(ImageFile,open(f'../Data/{args.simulation}.{args.feedback}.Images.pickle','wb'))
+    pickle.dump(SBFile,open(f'../Data/{args.simulation}.{args.feedback}.Profiles.pickle','wb'))
 tstop = time.time()
-print(f'{args.simulation} completed in {round((tstop-tstart)/60,2)} minutes.')
+myprint(f'\t{args.simulation} imaged in {round((tstop-tstart)/60,2)} minutes.',clear=True)
