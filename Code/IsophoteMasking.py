@@ -6,37 +6,11 @@ import PySimpleGUI as sg
 from numpy import sin,cos
 from numpy.linalg import eig, inv
 from matplotlib.patches import Circle,Ellipse
+from skimage.measure import EllipseModel
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 plt.rcParams.update({'text.usetex':False})
 warnings.filterwarnings("ignore")
-#Ellipse functions from https://stackoverflow.com/questions/13635528/fit-a-ellipse-in-python-given-a-set-of-points-xi-xi-yi
-def EllipseFit(x,y):
-    x = x[:,np.newaxis]
-    y = y[:,np.newaxis]
-    D =  np.hstack((x*x, x*y, y*y, x, y, np.ones_like(x)))
-    S = np.dot(D.T,D)
-    C = np.zeros([6,6])
-    C[0,2] = C[2,0] = 2; C[1,1] = -1
-    E, V =  eig(np.dot(inv(S), C))
-    n = np.argmax(np.abs(E))
-    return( V[:,n] )
-def EllipseCenter(ellipse):
-    b,c,d,f,g,a = ellipse[1]/2,ellipse[2],ellipse[3]/2,ellipse[4]/2,ellipse[5],ellipse[0]
-    num = b*b-a*c
-    x0=(c*d-b*f)/num
-    y0=(a*f-b*d)/num
-    return np.array([x0,y0])
-def EllipseAngle(ellipse):
-    b,c,d,f,g,a = ellipse[1]/2,ellipse[2],ellipse[3]/2,ellipse[4]/2,ellipse[5],ellipse[0]
-    return 0.5*np.arctan(2*b/(a-c))
-def EllipseAxes(ellipse):
-    b,c,d,f,g,a = ellipse[1]/2,ellipse[2],ellipse[3]/2,ellipse[4]/2,ellipse[5],ellipse[0]
-    up = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)
-    down1=(b*b-a*c)*( (c-a)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-    down2=(b*b-a*c)*( (a-c)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-    res1=np.sqrt(up/down1)
-    res2=np.sqrt(up/down2)
-    return np.array([res1,res2])
+
 #Masking Functions
 def MaskCircle(rad,cen_x,cen_y,isophote,mode):
     assert mode in ['Inclusive','Exclusive'], 'Masking Mode Error'
@@ -69,6 +43,8 @@ def MaskSlice(minang,maxang,isophote,mode):
             masked_iso[1].append(isophote[1][i])
     masked_iso = ( np.array(masked_iso[0]),np.array(masked_iso[1]) )
     return masked_iso
+
+#GUI Functions
 def InitializeGUI(PlotName):
     #GUI Properties
     _VARS = {'window':False,'fig_agg':False,'pltFig':False}#,'a':np.nan,'b':np.nan}
@@ -212,16 +188,22 @@ def updateChart(DrawCircle=False,DrawAngle=False,DrawEllipse=False):
         plt.plot([500,500+710*np.cos(np.radians(values['MaxAngle']))],
                  [500,500+710*np.sin(np.radians(values['MaxAngle']))],c='w',linewidth=1)
     if DrawEllipse:
-        E = EllipseFit(iso[1],iso[0])
-        cen = EllipseCenter(E)
-        phi = EllipseAngle(E)
-        a,b = EllipseAxes(E)
+        #Fit Ellipse to Isophote
+        xy=np.zeros((len(iso[0]),2))
+        for idx in range(len(iso[0])):
+            xy[idx]=[iso[1][idx],iso[0][idx]]
+        #Fit ellipse
+        E = EllipseModel()
+        E.estimate(np.array(xy))
+        params = E.params
+        cen = np.array([params[0],params[1]])
+        phi = params[4]
+        a,b = params[2],params[3]
         #Plot the ellipse fit on the image and set image title to axis ratio
         _VARS['pltFig'].axes[0].add_patch(Ellipse(cen,2*a,2*b,angle=degrees(phi),facecolor='None',edgecolor='orange'))
-        plt.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]],
-                color='orange')
+        plt.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]],color='orange')
         plt.plot([-b*cos(phi+pi/2)+cen[0],b*cos(phi+pi/2)+cen[0]],[-b*sin(phi+pi/2)+cen[1],
-                b*sin(phi+pi/2)+cen[1]],color='orange')   
+                   b*sin(phi+pi/2)+cen[1]],color='orange')   
         Data[halo][view] =  min([a,b])/max([a,b])
     _VARS['fig_agg'] = draw_figure(_VARS['window']['figCanvas'].TKCanvas,_VARS['pltFig'])
 

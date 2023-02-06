@@ -81,8 +81,9 @@ with pymp.Parallel(args.numproc) as pl:
                         ax.add_patch(Ellipse(cen,2*a,2*b,angle=degrees(phi),facecolor='None',edgecolor='orange'))
                         plt.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]],color='orange')
                         plt.plot([-b*cos(phi+pi/2)+cen[0],b*cos(phi+pi/2)+cen[0]],[-b*sin(phi+pi/2)+cen[1],b*sin(phi+pi/2)+cen[1]],color='orange')
-                        ax.set_title(f'b/a: {round(b/a,3)}  RMS: {round(rms,3)}  Manual: False',fontsize=15)
-                        current_shape[f'x{x:03d}y{y:03d}'] = b/a
+                        atrue,btrue = max([a,b]),min([a,b])
+                        ax.set_title(f'b/a: {round(btrue/atrue,3)}  RMS: {round(rms,3)}  Manual: False',fontsize=15)
+                        current_shape[f'x{x:03d}y{y:03d}'] = btrue/atrue
                         current_mask[f'x{x:03d}y{y:03d}'] = False if rms<1 else True
                     except:
                         ax.set_title(f'b/a: NaN  RMS: NaN  Manual: False',fontsize=15)
