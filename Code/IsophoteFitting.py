@@ -15,6 +15,8 @@ def myprint(string,clear=False):
 def RMS(res):
     if not isinstance(res,np.ndarray): res = np.array(res)
     return( np.sqrt(sum(res**2)/len(res)) )
+def pix2kpc(pix,width):
+    return(pix/1000.*width)
 
 parser = argparse.ArgumentParser(description='Collect images of all resolved halos from a given simulation. Images will be generated across all orientations.')
 parser.add_argument('-f','--feedback',choices=['BW','SB'],default='BW',help='Feedback Model')
@@ -83,15 +85,24 @@ with pymp.Parallel(args.numproc) as pl:
                         plt.plot([-b*cos(phi+pi/2)+cen[0],b*cos(phi+pi/2)+cen[0]],[-b*sin(phi+pi/2)+cen[1],b*sin(phi+pi/2)+cen[1]],color='orange')
                         atrue,btrue = max([a,b]),min([a,b])
                         ax.set_title(f'b/a: {round(btrue/atrue,3)}  RMS: {round(rms,3)}  Manual: False',fontsize=15)
-                        current_shape[f'x{x:03d}y{y:03d}'] = btrue/atrue
-                        current_mask[f'x{x:03d}y{y:03d}'] = False if rms<1 else True
+                        current_shape[f'x{x:03d}y{y:03d}'] = {}
+                        current_shape[f'x{x:03d}y{y:03d}']['b/a'] = btrue/atrue
+                        current_shape[f'x{x:03d}y{y:03d}']['a'] = pix2kpc(atrue,6*Rhalf)
+                        current_shape[f'x{x:03d}y{y:03d}']['b'] = pix2kpc(btrue,6*Rhalf)
+                        current_mask[f'x{x:03d}y{y:03d}'] = False if rms<20 else True
                     except:
                         ax.set_title(f'b/a: NaN  RMS: NaN  Manual: False',fontsize=15)
-                        current_shape[f'x{x:03d}y{y:03d}'] = np.NaN
+                        current_shape[f'x{x:03d}y{y:03d}'] = {}
+                        current_shape[f'x{x:03d}y{y:03d}']['b/a'] = np.NaN
+                        current_shape[f'x{x:03d}y{y:03d}']['a'] = np.NaN
+                        current_shape[f'x{x:03d}y{y:03d}']['b'] = np.NaN
                         current_mask[f'x{x:03d}y{y:03d}'] = True
                 else:
                     ax.set_title(f'b/a: NaN  RMS: NaN  Manual: False',fontsize=15)
-                    current_shape[f'x{x:03d}y{y:03d}'] = np.NaN
+                    current_shape[f'x{x:03d}y{y:03d}'] = {}
+                    current_shape[f'x{x:03d}y{y:03d}']['b/a'] = np.NaN
+                    current_shape[f'x{x:03d}y{y:03d}']['a'] = np.NaN
+                    current_shape[f'x{x:03d}y{y:03d}']['b'] = np.NaN
                     current_mask[f'x{x:03d}y{y:03d}'] = False
                 
                 f.savefig(f'../Images/{args.simulation}.{args.feedback}/{hid}/{hid}.x{x:03d}.y{y:03d}.Isophote.png',bbox_inches='tight',pad_inches=.1)
