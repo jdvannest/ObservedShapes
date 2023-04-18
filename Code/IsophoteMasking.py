@@ -15,6 +15,8 @@ def myprint(string,clear=False):
         sys.stdout.write("\033[F")
         sys.stdout.write("\033[K") 
     print(string)
+def pix2kpc(pix,width):
+    return(pix/1000.*width)
 
 parser = argparse.ArgumentParser(description='Collect images of all resolved halos from a given simulation. Images will be generated across all orientations.')
 parser.add_argument('-f','--feedback',choices=['BW','SB'],default='BW',help='Feedback Model')
@@ -222,7 +224,7 @@ def updateChart(DrawCircle=False,DrawAngle=False,DrawEllipse=False):
 def RMS(res):
     if not isinstance(res,np.ndarray): res = np.array(res)
     return( np.sqrt(sum(res**2)/len(res)) )
-def SavePlot(logimage,iso,fname):
+def SavePlot(logimage,iso,Rhalf,fname):
     f,ax = plt.subplots(1,1)
     ax.imshow(logimage)
     ax.set_xlim([0,1e3])
@@ -251,11 +253,14 @@ def SavePlot(logimage,iso,fname):
         atrue,btrue = max([a,b]),min([a,b])
         ax.set_title(f'b/a: {round(btrue/atrue,3)}  RMS: {round(rms,3)}  Manual: True',fontsize=15)
         f.savefig(fname,bbox_inches='tight',pad_inches=.1)
+        out = {}
+        out['b/a'] = btrue/atrue
+        out['a'] = pix2kpc(atrue,6*Rhalf)
         return(btrue/atrue)
     else:
         ax.set_title(f'b/a: NaN  RMS: NaN  Manual: True',fontsize=15)
         f.savefig(fname,bbox_inches='tight',pad_inches=.1)
-        return(np.NaN)
+        return({'ba':np.NaN,'a':np.NaN,'b':np.NaN})
 
 
 #Load sim-level data
@@ -294,7 +299,7 @@ for halo in Masking:
                     _VARS['window'].close()
                     myprint(f'Saving {args.simulation} {halo}-{rotation}...',clear=True)
                     if event=='Ignore':iso=[[],[]]
-                    ba = SavePlot(LogImage,iso,f'../Images/{args.simulation}.{args.feedback}/{halo}/{halo}.{".y".join(rotation.split("y"))}.Isophote.png')
+                    ba = SavePlot(LogImage,iso,Rhalf,f'../Images/{args.simulation}.{args.feedback}/{halo}/{halo}.{".y".join(rotation.split("y"))}.Isophote.png')
                     ShapeData[halo][rotation] = ba
                     pickle.dump(ShapeData,open(f'../Data/{args.simulation}.{args.feedback}.ShapeData.pickle','wb'))
                     Masking[halo][rotation] = False
