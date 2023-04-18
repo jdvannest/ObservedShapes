@@ -28,7 +28,7 @@ ShapeData = pymp.shared.dict()
 myprint(f'{args.simulation} loaded.',clear=True)
 
 prog=pymp.shared.array((1,),dtype=int)
-print(f'\tCalculating Shapes: {round(prog[0]/len(halos)*100,2)}%')
+print(f'\tCalculating Shapes: 0.00%')
 with pymp.Parallel(args.numproc) as pl:
     for i in pl.xrange(len(halos)):
         t_start_current = time.time()
@@ -56,7 +56,7 @@ with pymp.Parallel(args.numproc) as pl:
 
         ShapeData[str(hid)] = current
         prog[0]+=1
-        if not args.verbose: myprint(f'\tCalculating Shapes: {round(prog[0]/(len(halos)*72)*100,2)}%',clear=True)
+        if not args.verbose: myprint(f'\tCalculating Shapes: {round(prog[0]/len(halos)*100,2)}%',clear=True)
         t_end_current = time.time()
         if args.verbose: print(f'\t\t{hid} done in {round((t_end_current-t_start_current)/60,2)} minutes.')
 
