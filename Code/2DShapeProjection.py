@@ -42,14 +42,21 @@ with pymp.Parallel(args.numproc) as pl:
                 ind_eff = np.argmin(abs(rbins-Rhalf))
                 a,ba,ca,Es = [Shapes[str(hid)]['a'][ind_eff],Shapes[str(hid)]['ba'][ind_eff],
                               Shapes[str(hid)]['ca'][ind_eff],Shapes[str(hid)]['Es'][ind_eff]]
-                x,y,z = Ellipsoid(a,ba,ca,Es,xrot,yrot)
-                x = -x
-                ap,bp,cen,phi = Project_OLD(x,y,z)
-                atrue,btrue = max([ap,bp]),min([ap,bp])
-                current_shape[f'x{xrot:03d}y{yrot:03d}'] = {}
-                current_shape[f'x{xrot:03d}y{yrot:03d}']['b/a'] = btrue/atrue
-                current_shape[f'x{xrot:03d}y{yrot:03d}']['a'] = atrue
-                current_shape[f'x{xrot:03d}y{yrot:03d}']['b'] = btrue
+                if len(rbins)>0:
+                    x,y,z = Ellipsoid(a,ba,ca,Es,xrot,yrot)
+                    x = -x
+                    ap,bp,cen,phi = Project_OLD(x,y,z)
+                    atrue,btrue = max([ap,bp]),min([ap,bp])
+                    current_shape[f'x{xrot:03d}y{yrot:03d}'] = {}
+                    current_shape[f'x{xrot:03d}y{yrot:03d}']['b/a'] = btrue/atrue
+                    current_shape[f'x{xrot:03d}y{yrot:03d}']['a'] = atrue
+                    current_shape[f'x{xrot:03d}y{yrot:03d}']['b'] = btrue
+                else:
+                    ap,bp,cen,phi = 0,0,[500,500],0
+                    current_shape[f'x{xrot:03d}y{yrot:03d}'] = {}
+                    current_shape[f'x{xrot:03d}y{yrot:03d}']['b/a'] = np.NaN
+                    current_shape[f'x{xrot:03d}y{yrot:03d}']['a'] = np.NaN
+                    current_shape[f'x{xrot:03d}y{yrot:03d}']['b'] = np.NaN
 
                 if args.plot:
                     #Get Isophote
@@ -71,15 +78,19 @@ with pymp.Parallel(args.numproc) as pl:
                     ax.set_xlim([0,1e3])
                     ax.set_ylim([1e3,0])
                     ax.scatter(500,500,c='k',marker='+')
-                    ax.scatter(iso[1],iso[0],c='r',marker='.',s=1)
-                    x,y = kpc2pix(x,6*Rhalf)+500,kpc2pix(y,6*Rhalf)+500
-                    cen = [cen[0]+500,cen[1]+500]
-                    ap,bp = kpc2pix(ap,6*Rhalf),kpc2pix(bp,6*Rhalf)
-                    ax.add_patch(Ellipse(cen,2*ap,2*bp,angle=degrees(phi),facecolor='None',edgecolor='orange',linewidth=2))
-                    plt.plot([-ap*cos(phi)+cen[0],ap*cos(phi)+cen[0]],[-ap*sin(phi)+cen[1],ap*sin(phi)+cen[1]],color='orange')
-                    plt.plot([-bp*cos(phi+pi/2)+cen[0],bp*cos(phi+pi/2)+cen[0]],[-bp*sin(phi+pi/2)+cen[1],bp*sin(phi+pi/2)+cen[1]],color='orange')
-                    ax.set_title(f'Projected b/a: {round(btrue/atrue,3)}',fontsize=15)
+                    if len(iso[0])>0: ax.scatter(iso[1],iso[0],c='r',marker='.',s=1)
+                    if ap>0:
+                        x,y = kpc2pix(x,6*Rhalf)+500,kpc2pix(y,6*Rhalf)+500
+                        cen = [cen[0]+500,cen[1]+500]
+                        ap,bp = kpc2pix(ap,6*Rhalf),kpc2pix(bp,6*Rhalf)
+                        ax.add_patch(Ellipse(cen,2*ap,2*bp,angle=degrees(phi),facecolor='None',edgecolor='orange',linewidth=2))
+                        plt.plot([-ap*cos(phi)+cen[0],ap*cos(phi)+cen[0]],[-ap*sin(phi)+cen[1],ap*sin(phi)+cen[1]],color='orange')
+                        plt.plot([-bp*cos(phi+pi/2)+cen[0],bp*cos(phi+pi/2)+cen[0]],[-bp*sin(phi+pi/2)+cen[1],bp*sin(phi+pi/2)+cen[1]],color='orange')
+                        ax.set_title(f'Projected b/a: {round(btrue/atrue,3)}',fontsize=15)
+                    else:
+                        ax.set_title(f'Projected b/a: {np.NaN}',fontsize=15)
                     f.savefig(f'../Images/{args.simulation}.{args.feedback}/{hid}/{hid}.x{xrot:03d}.y{yrot:03d}.Intrinsic.png',bbox_inches='tight',pad_inches=.1)
+                    plt.close()
                 
                 prog[0]+=1
                 myprint(f'Projecting Ellipsoids for {args.simulation}: {round(prog[0]/(len(halos)*72)*100,3)}%',clear=True)
