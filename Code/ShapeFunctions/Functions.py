@@ -3,25 +3,18 @@ from pynbody.analysis import profile
 import numpy as np
 import logging
 logger = logging.getLogger('pynbody.analysis.halo')
-import numpy as np 
 from numpy import matmul as X
-from numpy.linalg import eig, inv
 from numpy import sin,cos
+from skimage.measure import EllipseModel
 from math import pi
 
+#Imagae coordinate conversion
+def pix2kpc(pix,width):
+    return(pix/1000.*width)
+def kpc2pix(kpc,width):
+    return(kpc/width*1000)
+
 #Projection Functions
-def cart2pol(x, y):
-    #Cartesian to Polar coordinate conversion
-    rho = np.sqrt(x**2 + y**2)
-    phi = np.arctan2(y, x)
-    return(rho, phi)
-
-def pol2cart(rho, phi):
-    #Polar to Cartesian coordinate conversion
-    x = rho * np.cos(phi)
-    y = rho * np.sin(phi)
-    return(x, y)
-
 def Rx(theta):
     #X-axis rotation matrix
     a = np.radians(theta)
@@ -32,53 +25,57 @@ def Ry(theta):
     a = np.radians(theta)
     return( [[cos(a),0,sin(a)],[0,1,0],[-sin(a),0,cos(a)]] )
 
-def EllipseFit(x,y):
-    #Fit an ellipse to 2D scatter data
-    ex = np.array(x)
-    ey = np.array(y)
-    ex = ex[:,np.newaxis]
-    ey = ey[:,np.newaxis]
-    D =  np.hstack((ex*ex, ex*ey, ey*ey, ex, ey, np.ones_like(ex)))
-    S = np.dot(D.T,D)
-    C = np.zeros([6,6])
-    C[0,2] = C[2,0] = 2; C[1,1] = -1
-    E, V =  eig(np.dot(inv(S), C))
-    n = np.argmax(np.abs(E))
-    return( V[:,n] )
-
-def EllipseAxes(ellipse):
-    #Return a and b axes lengths for fit ellipse
-    b,c,d,f,g,a = ellipse[1]/2,ellipse[2],ellipse[3]/2,ellipse[4]/2,ellipse[5],ellipse[0]
-    up = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)
-    down1=(b*b-a*c)*( (c-a)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-    down2=(b*b-a*c)*( (a-c)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-    res1=np.sqrt(up/down1)
-    res2=np.sqrt(up/down2)
-    return np.array([res1,res2])
-
-def Ellipsoid(b,c,xrot,yrot):
-    #Generate 3D scatter points for an ellipsoid with given b/a and c/a axis ratios
-    #and x,y rotations
+def Ellipsoid(a,ba,ca,Es,xrot,yrot):
+    #Generate 3D ellispoid from halo_shape_stellar outputs (a,ba,ca,Es)
+    #and rotate it along x-axis and y-axis (xrot,yrot)
     resolution = 50
     phi = np.linspace(0,2*np.pi,resolution)
     theta = np.linspace(0,np.pi,resolution)
+    #Get x,y,z of original ellispoid
     x,y,z=[[],[],[]]
     for i in np.arange(resolution):
         for j in np.arange(resolution):
-            x.append(sin(theta[i])*cos(phi[j]))
-            y.append(b*sin(theta[i])*sin(phi[j]))
-            z.append(c*cos(theta[i]))
-    for i in np.arange(len(x)):
-        vec = [x[i],y[i],z[i]]
-        rot1 = X(vec,Rx(xrot))
-        rot2 = X(rot1,Ry(yrot))
-        x[i],y[i],z[i] = rot2
-    x = np.array(x)
-    y = np.array(y)
-    z = np.array(z)
-    return(x,y,z)
+            x.append(a*sin(theta[i])*cos(phi[j]))
+            y.append(a*ba*sin(theta[i])*sin(phi[j]))
+            z.append(a*ca*cos(theta[i]))
+    x,y,z = np.array(x),np.array(y),np.array(z)
+    #Rotate original ellipsoid by Es
+    rx,ry,rz = np.zeros(len(x)),np.zeros(len(x)),np.zeros(len(x))
+    for j in np.arange(len(x)):
+        rv = X(Es,np.array([[x[j]],[y[j]],[z[j]]]))
+        rx[j] = rv[0][0]
+        ry[j] = rv[1][0]
+        rz[j] = rv[2][0]
+    #Rotate ellipsoid around x-axis then y-axis
+    for i in np.arange(len(rx)):
+        vec = [rx[i],ry[i],rz[i]]
+        rx[i],ry[i],rz[i] = X(Ry(yrot),X(Rx(xrot),vec))
+    return(rx,ry,rz)
 
-def Ellipticity(x,y,z):
+def Project(x,y,z):
+    edge_x,edge_y = x[(z>-.1)&(z<.1)],y[(z>-.1)&(z<.1)]
+    xy=np.zeros((len(edge_x),2))
+    for i in np.arange(len(edge_x)):
+        xy[i] = [edge_x[i],edge_y[i]]
+    E = EllipseModel()
+    E.estimate(np.array(xy))
+    params = E.params
+    cen = np.array([params[0],params[1]])
+    phi = params[4]
+    a,b = params[2],params[3]#np.max([params[2],params[3]]),np.min([params[2],params[3]])
+    return(a,b,cen,phi)
+
+def cart2pol(x, y):
+    #Cartesian to Polar coordinate conversion
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return(rho, phi)
+def pol2cart(rho, phi):
+    #Polar to Cartesian coordinate conversion
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return(x, y)
+def Project_OLD(x,y,z):
     #Return the b/a axis ratios of a flattened 3D rotated ellipsoid
     phi_bins = np.linspace(-pi,pi,50)
     r,phi = cart2pol(np.array(x),np.array(y))
@@ -92,10 +89,17 @@ def Ellipticity(x,y,z):
         if len(binr)>0:
             r_edge.append(max(binr))
             phi_edge.append(binphi[binr.index(max(binr))])
-    x_edge,y_edge=pol2cart(r_edge,phi_edge)
-    Efit = EllipseFit(x_edge,y_edge)
-    a,b = EllipseAxes(Efit)
-    return(b/a)
+    edge_x,edge_y=pol2cart(r_edge,phi_edge)
+    xy=np.zeros((len(edge_x),2))
+    for i in np.arange(len(edge_x)):
+        xy[i] = [edge_x[i],edge_y[i]]
+    E = EllipseModel()
+    E.estimate(np.array(xy))
+    params = E.params
+    cen = np.array([params[0],params[1]])
+    phi = params[4]
+    a,b = params[2],params[3]#np.max([params[2],params[3]]),np.min([params[2],params[3]])
+    return(a,b,cen,phi)
 
 def myround(x, base=5):
     return base * round(x/base)
