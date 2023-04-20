@@ -37,12 +37,12 @@ with pymp.Parallel(args.numproc) as pl:
         for xrot in np.arange(0,180,30):
             for yrot in np.arange(0,360,30):
                 #Get 3D Ellipsoid Projection
-                rbins = Shapes[str(hid)]['rbins']
-                Rhalf = Profiles[str(hid)][f'x000y000']['Rhalf']
-                ind_eff = np.argmin(abs(rbins-Rhalf))
-                a,ba,ca,Es = [Shapes[str(hid)]['a'][ind_eff],Shapes[str(hid)]['ba'][ind_eff],
-                              Shapes[str(hid)]['ca'][ind_eff],Shapes[str(hid)]['Es'][ind_eff]]
-                if len(rbins)>0:
+                try:
+                    rbins = Shapes[str(hid)]['rbins']
+                    Rhalf = Profiles[str(hid)][f'x000y000']['Rhalf']
+                    ind_eff = np.argmin(abs(rbins-Rhalf))
+                    a,ba,ca,Es = [Shapes[str(hid)]['a'][ind_eff],Shapes[str(hid)]['ba'][ind_eff],
+                                  Shapes[str(hid)]['ca'][ind_eff],Shapes[str(hid)]['Es'][ind_eff]]
                     x,y,z = Ellipsoid(a,ba,ca,Es,xrot,yrot)
                     x = -x
                     ap,bp,cen,phi = Project_OLD(x,y,z)
@@ -51,7 +51,7 @@ with pymp.Parallel(args.numproc) as pl:
                     current_shape[f'x{xrot:03d}y{yrot:03d}']['b/a'] = btrue/atrue
                     current_shape[f'x{xrot:03d}y{yrot:03d}']['a'] = atrue
                     current_shape[f'x{xrot:03d}y{yrot:03d}']['b'] = btrue
-                else:
+                except:
                     ap,bp,cen,phi = 0,0,[500,500],0
                     current_shape[f'x{xrot:03d}y{yrot:03d}'] = {}
                     current_shape[f'x{xrot:03d}y{yrot:03d}']['b/a'] = np.NaN
@@ -59,26 +59,31 @@ with pymp.Parallel(args.numproc) as pl:
                     current_shape[f'x{xrot:03d}y{yrot:03d}']['b'] = np.NaN
 
                 if args.plot:
-                    #Get Isophote
-                    Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Rhalf']
-                    rbins = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['rbins']
-                    ind_eff = np.argmin(abs(rbins-Rhalf))
-                    v = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['v_lum_den'][ind_eff]
-                    im = Images[str(hid)][f'x{xrot:03d}y{yrot:03d}']
-                    #im = np.flip(im,0)
-                    iso,tolerance = [[[],[]],.01]
-                    if not np.isnan(v):
-                        while len(iso[0])==0 and tolerance<.1:
-                            iso = np.where((im>v*(1-tolerance)) & (im<v*(1+tolerance)))
-                            tolerance+=.01
-                    
                     f,ax = plt.subplots(1,1)
                     LogImage = plt.imread(f'../Images/{args.simulation}.{args.feedback}/{hid}/{hid}.x{xrot:03d}.y{yrot:03d}.png')
                     ax.imshow(LogImage)
                     ax.set_xlim([0,1e3])
                     ax.set_ylim([1e3,0])
                     ax.scatter(500,500,c='k',marker='+')
-                    if len(iso[0])>0: ax.scatter(iso[1],iso[0],c='r',marker='.',s=1)
+
+                    #Get Isophote
+                    try:
+                        Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Rhalf']
+                        rbins = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['rbins']
+                        ind_eff = np.argmin(abs(rbins-Rhalf))
+                        v = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['v_lum_den'][ind_eff]
+                        im = Images[str(hid)][f'x{xrot:03d}y{yrot:03d}']
+                        #im = np.flip(im,0)
+                        iso,tolerance = [[[],[]],.01]
+                        if not np.isnan(v):
+                            while len(iso[0])==0 and tolerance<.1:
+                                iso = np.where((im>v*(1-tolerance)) & (im<v*(1+tolerance)))
+                                tolerance+=.01
+                        ax.scatter(iso[1],iso[0],c='r',marker='.',s=1)
+                    except:
+                        continue
+                    
+                    #Get Projected Ellipse
                     if ap>0:
                         x,y = kpc2pix(x,6*Rhalf)+500,kpc2pix(y,6*Rhalf)+500
                         cen = [cen[0]+500,cen[1]+500]
@@ -101,3 +106,4 @@ ShapeFile = {}
 for hid in halos:
     ShapeFile[str(hid)] = ShapeData[str(hid)]
 pickle.dump(ShapeFile,open(f'../Data/{args.simulation}.{args.feedback}.ProjectedData.pickle','wb'))
+myprint(f'{args.simulation} done.',clear=True)
