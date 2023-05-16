@@ -15,11 +15,17 @@ while loop:
     type = input('Collect Images or Shapes (I/S): ')
     if type in ['I','S']:
         loop = False 
+if type=='I':
+    loop = True
+    while loop:
+        im = input('Generate images in addition to Profiles? (y/n): ')
+        if im in ['y','n']: loop = False
+    gen_im = '-i' if im=='y' else ''
 
 for feedback in ['BW','SB']:
     sims = pickle.load(open(f'SimulationInfo.{feedback}.pickle','rb'))
     for s in sims:
         if type=='I':
-            os.system(f"{config['python_path']} ImageCollection.py -f {feedback} -s {s} -n {args.numproc} {verbose} {overwrite}")
+            os.system(f"{config['python_path']} ImageCollection.py -f {feedback} -s {s} {gen_im} -n {args.numproc} {verbose} {overwrite}")
         elif type=='S':
             os.system(f"{config['python_path']} 3DShapeCollection.py -f {feedback} -s {s} -n {args.numproc} {verbose}")
