@@ -23,4 +23,7 @@ for feedback in ['BW','SB']:
             if erase: os.system(f'rm {halo}.Isophotes.tar.gz')
             os.system(f'tar -xzf {halo}.Intrinsic.tar.gz')
             if erase: os.system(f'rm {halo}.Intrinsic.tar.gz')
+os.chdir(f'{gitdir}Images/EllipseComparison/')
+os.system(f'tar -xzf EllipseComparison.tar.gz')
+if erase: os.system(f'rm EllipseComparison.tar.gz')
 print('Done')

@@ -1,4 +1,4 @@
-import argparse,pickle,pymp,sys
+import argparse,pickle,pymp,sys,warnings
 import numpy as np
 from math import pi
 from numpy import degrees
@@ -6,7 +6,8 @@ from numpy import sin,cos
 from matplotlib.patches import Ellipse
 import matplotlib.pylab as plt
 from ShapeFunctions.Functions import Ellipsoid,Project,kpc2pix,pix2kpc,Project_OLD
-
+plt.rcParams.update({'text.usetex':False})
+warnings.filterwarnings("ignore")
 def myprint(string,clear=False):
     if clear:
         sys.stdout.write("\033[F")
@@ -39,7 +40,7 @@ with pymp.Parallel(args.numproc) as pl:
                 #Get 3D Ellipsoid Projection
                 try:
                     rbins = Shapes[str(hid)]['rbins']
-                    Rhalf = Profiles[str(hid)][f'x000y000']['Rhalf']
+                    Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Rhalf']
                     ind_eff = np.argmin(abs(rbins-Rhalf))
                     a,ba,ca,Es = [Shapes[str(hid)]['a'][ind_eff],Shapes[str(hid)]['ba'][ind_eff],
                                   Shapes[str(hid)]['ca'][ind_eff],Shapes[str(hid)]['Es'][ind_eff]]
@@ -73,7 +74,7 @@ with pymp.Parallel(args.numproc) as pl:
                         ind_eff = np.argmin(abs(rbins-Rhalf))
                         v = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['v_lum_den'][ind_eff]
                         im = Images[str(hid)][f'x{xrot:03d}y{yrot:03d}']
-                        #im = np.flip(im,0)
+                        im = np.flip(im,0)
                         iso,tolerance = [[[],[]],.01]
                         if not np.isnan(v):
                             while len(iso[0])==0 and tolerance<.1:
@@ -96,7 +97,7 @@ with pymp.Parallel(args.numproc) as pl:
                         ax.set_title(f'Projected b/a: {np.NaN}',fontsize=15)
                     f.savefig(f'../Images/{args.simulation}.{args.feedback}/{hid}/{hid}.x{xrot:03d}.y{yrot:03d}.Intrinsic.png',bbox_inches='tight',pad_inches=.1)
                     plt.close()
-                
+
                 prog[0]+=1
                 myprint(f'Projecting Ellipsoids for {args.simulation}: {round(prog[0]/(len(halos)*72)*100,3)}%',clear=True)
         ShapeData[str(hid)] = current_shape

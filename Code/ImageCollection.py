@@ -2,6 +2,7 @@ import argparse,os,pickle,pymp,pynbody,sys,time,warnings
 import numpy as np
 import matplotlib.pylab as plt
 from pynbody.plot.sph import image
+from scipy.optimize import curve_fit
 def myprint(string,clear=False):
     if clear:
         sys.stdout.write("\033[F")
@@ -59,7 +60,7 @@ with pymp.Parallel(args.numproc) as pl:
                 current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}'] = {}
                 current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['Rhalf'] = Rhalf
                 try:
-                    prof = pynbody.analysis.profile.Profile(halo.s,type='lin',min=.25,max=5*Rhalf,ndim=2,nbins=101)
+                    prof = pynbody.analysis.profile.Profile(halo.s,type='lin',min=.25,max=5*Rhalf,ndim=2,nbins=int((5*Rhalf)/0.1))
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['sb,v'] = prof['sb,v']
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['v_lum_den'] = prof['v_lum_den']
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['rbins'] = prof['rbins']
@@ -67,6 +68,21 @@ with pymp.Parallel(args.numproc) as pl:
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['sb,v'] = np.NaN
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['v_lum_den'] = np.NaN
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['rbins'] = np.NaN
+                if not np.isnan(current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['sb,v']):
+                    try:
+                        vband = prof['sb,v']
+                        smooth = np.nanmean(np.pad(vband.astype(float),(0,3-vband.size%3),mode='constant',constant_values=np.nan).reshape(-1,3),axis=1)
+                        x = np.arange(len(smooth))*0.3 + 0.15
+                        x[0] = .05
+                        if True in np.isnan(y):
+                            x = np.delete(x,np.where(np.isnan(smooth)==True))
+                            y = np.delete(smooth,np.where(np.isnan(smooth)==True))
+                        r0 = x[int(len(x)/2)]
+                        m0 = np.mean(y[:3])
+                        par,ign = curve_fit(sersic,x,smooth,p0=(m0,r0),bounds=([10,0],[40,100]))
+                        current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['Reff'] = par[1]
+                    except:
+                        current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['Reff'] = np.NaN
                 #Generate V-band SB image
                 f = plt.figure(frameon=False)
                 f.set_size_inches(10,10)
