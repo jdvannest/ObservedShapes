@@ -8,7 +8,7 @@ parser.add_argument('-o','--overwrite',action='store_true',help='Overwrite exist
 args = parser.parse_args()
 
 overwrite = '-o' if args.overwrite else ''
-verbose = '-v' if args.overwrite else ''
+verbose = '-v' if args.verbose else ''
 
 loop = True
 while loop:
