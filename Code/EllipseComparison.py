@@ -17,14 +17,16 @@ for xrot in np.arange(0,180,30):
         for fb in ['BW']:#,'SB']:
             for sim in ['cptmarvel','elektra','storm','rogue']:
                 obs_data = pickle.load(open(f'../Data/{sim}.{fb}.ShapeData.pickle','rb'))
+                obs_mask = pickle.load(open(f'../Data/{sim}.{fb}.Masking.pickle','rb'))
                 prj_data = pickle.load(open(f'../Data/{sim}.{fb}.ProjectedData.pickle','rb'))
 
                 for halo in obs_data:
-                    projected.append(prj_data[halo][f'x{xrot:03d}y{yrot:03d}']['b/a'])
-                    try:
-                        observed.append(obs_data[halo][f'x{xrot:03d}y{yrot:03d}']['b/a'])
-                    except:
-                        observed.append(obs_data[halo][f'x{xrot:03d}y{yrot:03d}'])
+                    if not obs_mask[halo][f'x{xrot:03d}y{yrot:03d}']:
+                        projected.append(prj_data[halo][f'x{xrot:03d}y{yrot:03d}']['b/a'])
+                        try:
+                            observed.append(obs_data[halo][f'x{xrot:03d}y{yrot:03d}']['b/a'])
+                        except:
+                            observed.append(obs_data[halo][f'x{xrot:03d}y{yrot:03d}'])
         
         ax.scatter(projected,observed,c='k')
         f.savefig(f'../Images/EllipseComparison/EllipseComparison.x{xrot:03d}.y{yrot:03d}.png',bbox_inches='tight',pad_inches=.1)

@@ -15,4 +15,5 @@ while loop:
 for feedback in ['BW','SB']:
     sims = pickle.load(open(f'SimulationInfo.{feedback}.pickle','rb'))
     for s in sims:
-        os.system(f"{config['python_path']} {script} -f {feedback} -s {s} -n {args.numproc}")
+        #os.system(f"{config['python_path']} {script} -f {feedback} -s {s} -n {args.numproc}")
+        os.system(f"/usr/local/anaconda/bin/python {script} -f {feedback} -s {s} -n {args.numproc}")

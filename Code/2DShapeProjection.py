@@ -40,7 +40,7 @@ with pymp.Parallel(args.numproc) as pl:
                 #Get 3D Ellipsoid Projection
                 try:
                     rbins = Shapes[str(hid)]['rbins']
-                    Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Rhalf']
+                    Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Reff']
                     ind_eff = np.argmin(abs(rbins-Rhalf))
                     a,ba,ca,Es = [Shapes[str(hid)]['a'][ind_eff],Shapes[str(hid)]['ba'][ind_eff],
                                   Shapes[str(hid)]['ca'][ind_eff],Shapes[str(hid)]['Es'][ind_eff]]
@@ -69,7 +69,7 @@ with pymp.Parallel(args.numproc) as pl:
 
                     #Get Isophote
                     try:
-                        Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Rhalf']
+                        Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Reff']
                         rbins = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['rbins']
                         ind_eff = np.argmin(abs(rbins-Rhalf))
                         v = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['v_lum_den'][ind_eff]
