@@ -16,7 +16,7 @@ def myprint(string,clear=False):
 
 parser = argparse.ArgumentParser(description='Collect images of all resolved halos from a given simulation. Images will be generated across all orientations.')
 parser.add_argument('-f','--feedback',choices=['BW','SB'],default='BW',help='Feedback Model')
-parser.add_argument('-s','--simulation',choices=['cptmarvel','elektra','storm','rogue'],required=True,help='Simulation to analyze')
+parser.add_argument('-s','--simulation',choices=['cptmarvel','elektra','storm','rogue','h148','h229','h242','h329'],required=True,help='Simulation to analyze')
 parser.add_argument('-n','--numproc',type=int,required=True,help='Number of processors to use')
 parser.add_argument('-p','--plot',action='store_true')
 #parser.add_argument('-o','--overwrite',action='store_true',help='Overwrite existing images')
