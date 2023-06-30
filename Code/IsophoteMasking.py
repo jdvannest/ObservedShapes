@@ -256,7 +256,8 @@ def SavePlot(logimage,iso,Rhalf,fname):
         out = {}
         out['b/a'] = btrue/atrue
         out['a'] = pix2kpc(atrue,6*Rhalf)
-        return(btrue/atrue)
+        out['b'] = pix2kpc(btrue,6*Rhalf)
+        return(out)
     else:
         ax.set_title(f'b/a: NaN  RMS: NaN  Manual: True',fontsize=15)
         f.savefig(fname,bbox_inches='tight',pad_inches=.1)

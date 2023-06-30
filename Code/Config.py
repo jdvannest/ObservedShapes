@@ -49,7 +49,7 @@ Sims = {
     },
     'h229' : {
         'path' : dcjl_path+'h229.cosmo50PLK.3072gst5HbwK1BH/h229.cosmo50PLK.3072gst5HbwK1BH.004096/h229.cosmo50PLK.3072gst5HbwK1BH.004096',
-        'halos' : [2,3,6,14,15,18,20,22,25,33,47,48,49,52,57,62,89,92,127]
+        'halos' : [2,3,6,14,15,18,20,22,33,47,48,49,52,57,62,89,92,127]#,25]
     },
     'h242' : {
         'path' : dcjl_path+'h242.cosmo50PLK.3072gst5HbwK1BH/h242.cosmo50PLK.3072gst5HbwK1BH.004096/h242.cosmo50PLK.3072gst5HbwK1BH.004096',

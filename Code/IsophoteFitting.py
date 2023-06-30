@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='Collect images of all resolved hal
 parser.add_argument('-f','--feedback',choices=['BW','SB'],default='BW',help='Feedback Model')
 parser.add_argument('-s','--simulation',choices=['cptmarvel','elektra','storm','rogue','h148','h229','h242','h329'],required=True,help='Simulation to analyze')
 parser.add_argument('-n','--numproc',type=int,required=True,help='Number of processors to use')
-#parser.add_argument('-o','--overwrite',action='store_true',help='Overwrite existing images')
+parser.add_argument('-v','--verbose',action='store_true')
 args = parser.parse_args()
 
 SimInfo = pickle.load(open(f'SimulationInfo.{args.feedback}.pickle','rb'))
@@ -33,9 +33,10 @@ Profiles = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.Profiles
 ShapeData = pymp.shared.dict()
 MaskData = pymp.shared.dict()
 prog=pymp.shared.array((1,),dtype=int)
-print(f'Fitting Isophotes for {args.simulation}: 0.000%')
+if not args.verbose: print(f'Fitting Isophotes for {args.simulation}: 0.000%')
 with pymp.Parallel(args.numproc) as pl:
     for i in pl.xrange(len(halos)):
+        if args.verbose: print(f'Analyzing {args.simulation}-{halos[i]}...')
         hid = halos[i]
         current_shape = {}
         current_mask = {}
@@ -108,9 +109,10 @@ with pymp.Parallel(args.numproc) as pl:
                 f.savefig(f'../Images/{args.simulation}.{args.feedback}/{hid}/{hid}.x{x:03d}.y{y:03d}.Isophote.png',bbox_inches='tight',pad_inches=.1)
                 plt.close()
                 prog[0]+=1
-                myprint(f'Fitting Isophotes for {args.simulation}: {round(prog[0]/(len(halos)*72)*100,3)}%',clear=True)
+                if not args.verbose: myprint(f'Fitting Isophotes for {args.simulation}: {round(prog[0]/(len(halos)*72)*100,3)}%',clear=True)
         ShapeData[str(hid)] = current_shape
         MaskData[str(hid)] = current_mask
+        if args.verbose: print(f'{args.simulation}-{halos[i]} done.')
 
 #Pymp shared dictionaries 'corrupt' when saving, so transfer to standerd dict objects
 ShapeFile,MaskFile = {},{}
