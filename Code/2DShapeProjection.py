@@ -41,6 +41,7 @@ with pymp.Parallel(args.numproc) as pl:
                 try:
                     rbins = Shapes[str(hid)]['rbins']
                     Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Reff']
+                    if np.isnan(Rhalf): Rhalf = Profiles[str(hid)][f'x{xrot:03d}y{yrot:03d}']['Rhalf']
                     ind_eff = np.argmin(abs(rbins-Rhalf))
                     a,ba,ca,Es = [Shapes[str(hid)]['a'][ind_eff],Shapes[str(hid)]['ba'][ind_eff],
                                   Shapes[str(hid)]['ca'][ind_eff],Shapes[str(hid)]['Es'][ind_eff]]
