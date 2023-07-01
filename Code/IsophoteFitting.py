@@ -44,6 +44,7 @@ with pymp.Parallel(args.numproc) as pl:
             for y in np.arange(0,360,30):
                 rbins = Profiles[str(hid)][f'x{x:03d}y{y:03d}']['rbins']
                 Rhalf = Profiles[str(hid)][f'x{x:03d}y{y:03d}']['Reff']
+                if np.isnan(Rhalf): Rhalf = Profiles[str(hid)][f'x{x:03d}y{y:03d}']['Rhalf']
                 ind_eff = np.argmin(abs(rbins-Rhalf))
                 v = Profiles[str(hid)][f'x{x:03d}y{y:03d}']['v_lum_den'][ind_eff]
                 im = Images[str(hid)][f'x{x:03d}y{y:03d}']

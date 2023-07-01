@@ -282,7 +282,8 @@ for halo in Masking:
 
             #Find default isophote
             rbins = Profiles[halo][rotation]['rbins']
-            Rhalf = Profiles[halo][rotation]['Rhalf']
+            Rhalf = Profiles[halo][rotation]['Reff']
+            if np.isnan(Rhalf): Rhalf = Profiles[halo][rotation]['Rhalf']
             ind_eff = np.argmin(abs(rbins-Rhalf))
             v = Profiles[halo][rotation]['v_lum_den'][ind_eff]
             tol = .01

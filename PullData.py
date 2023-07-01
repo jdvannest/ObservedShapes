@@ -13,7 +13,7 @@ while loop:
         loop = False
 if i_tar=='y':
     for feedback in ['SB','BW']:
-        SimInfo = pickle.load(open(f'SimulationInfo.{feedback}.pickle','rb'))
+        SimInfo = pickle.load(open(f'Code/SimulationInfo.{feedback}.pickle','rb'))
         for sim in SimInfo:
             for halo in SimInfo[sim]['halos']:
                 os.system(f'scp glaurung:/myhome2/users/vannest/ObservedShapes/Images/{sim}.{feedback}/{halo}/*.tar.gz Images/{sim}.{feedback}/{halo}')
