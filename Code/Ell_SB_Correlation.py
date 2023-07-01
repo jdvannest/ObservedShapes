@@ -35,26 +35,19 @@ def randomorientation(base=30):
         y = 0
     return(f'x{x:03d}y{y:03d}')
 
-n_itr = int(1e4)
-x = np.linspace(-1,1,500)
-Xu = False
-StellarMass = False
-Morphology = False
-Scatter,Nscat = True,10
-
 
 #Xu&Randall2020 (https://ui.adsabs.harvard.edu/abs/2020ApJ...900...69X/abstract)
 LGall = [-0.287,0.058,'#7B0B01','All LG Dsphs']
 LGbright = [-0.353,0.059,'#FFCC99','LG Dsphs\n'+r'$M/L<100M_\odot/L_\odot$']
 LGdim = [0.509,0.309,'#339AFE','LG Dsphs\n'+r'$M/L>100M_\odot/L_\odot$']
 FIRE = [-0.322,0.213,'#411B52','FIRE Simulations']
-FIRE_Data = read_csv('../Images/CorrelationTesting/FIRE_Data.csv')
+FIRE_Data = read_csv('../Data/BasicData/FIRE_Data.csv')
 FIRE_x = FIRE_Data['X'].tolist()
 FIRE_y = FIRE_Data['Y'].tolist()
 
 
 ProfData,ProjData,MorphData,ShapeData,nhalo = {},{},{},{},0
-for sim in ['cptmarvel','elektra','storm','rogue']:
+for sim in ['h148','h229','h242','h329']:#['cptmarvel','elektra','storm','rogue']:
     ProfData[sim]=pickle.load(open(f'../Data/{sim}.BW.Profiles.pickle','rb'))
     ProjData[sim]=pickle.load(open(f'../Data/{sim}.BW.ProjectedData.pickle','rb'))
     MorphData[sim]=pickle.load(open(f'../Data/{sim}.BW.3DShapes.pickle','rb'))
@@ -62,6 +55,17 @@ for sim in ['cptmarvel','elektra','storm','rogue']:
     nhalo+=len(ProfData[sim])
 Masses = pickle.load(open('../Data/BasicData/Marvel_DCJL.Masses.pickle','rb'))
 Magnitudes = pickle.load(open('../Data/BasicData/Marvel_DCJL.Magnitudes.pickle','rb'))
+
+
+
+n_itr = int(1e5)
+x = np.linspace(-1,1,500)
+Xu = True
+StellarMass = True
+Morphology = True
+Scatter,Nscat = True,10
+PlotDict = ShapeData
+
 
 
 #Xu Comparison
@@ -73,12 +77,12 @@ if Xu:
         for sim in ProfData:
             for halo in ProfData[sim]:
                 angle = randomorientation()
-                ell[i] = 1-ShapeData[sim][halo][angle]['b/a']#ProjData[sim][halo][angle]['b/a']
+                ell[i] = 1-PlotDict[sim][halo][angle]['b/a']
                 sb[i] = ProfData[sim][halo][angle]['lum_den'][0]
                 if n==n_itr-1:
                     ell_ind,sb_ind = [],[]
                     for a in ProfData[sim][halo]:
-                        ell_ind.append(1-ShapeData[sim][halo][a]['b/a'])#ProjData[sim][halo][a]['b/a'])
+                        ell_ind.append(1-PlotDict[sim][halo][a]['b/a'])
                         sb_ind.append(ProfData[sim][halo][a]['lum_den'][0])
                     ind_r[i] = correlation(ell_ind,sb_ind)
                 i+=1
@@ -91,9 +95,9 @@ if Xu:
     ell_f,sb_f,ell_s,sb_s,i = np.zeros(nhalo),np.zeros(nhalo),np.zeros(nhalo),np.zeros(nhalo),0
     for sim in ProfData:
         for halo in ProfData[sim]:
-            ell_f[i] = 1-ProjData[sim][halo]['x000y000']['b/a']
+            ell_f[i] = 1-PlotDict[sim][halo]['x000y000']['b/a']
             sb_f[i] = ProfData[sim][halo]['x000y000']['lum_den'][0]
-            ell_s[i] = 1-ProjData[sim][halo]['x090y000']['b/a']
+            ell_s[i] = 1-PlotDict[sim][halo]['x090y000']['b/a']
             sb_s[i] = ProfData[sim][halo]['x090y000']['lum_den'][0]
             i+=1
     r_face = correlation(ell_f,sb_f)
@@ -118,7 +122,7 @@ if Xu:
         ax.axvspan(obs[0]-obs[1],obs[0]+obs[1],color=obs[2],alpha=.3)
 
     density = stats.gaussian_kde(r_dist)
-    ax.plot(x,density(x),c='k',linewidth=3,label='MARVEL Simulations')
+    ax.plot(x,density(x),c='k',linewidth=3,label='DCJL Simulations')
     ax.set_ylim(bottom=0)
     ax.legend(loc='lower right',prop={'size':12})
     #plt.show()
@@ -146,33 +150,33 @@ for lim in limits:
         for sim in ProfData:
             for halo in ProfData[sim]:
                 angle = randomorientation()
-                ell[i] = 1-ProjData[sim][halo][angle]['b/a']
+                ell[i] = 1-PlotDict[sim][halo][angle]['b/a']
                 sb[i] = ProfData[sim][halo][angle]['lum_den'][0]
                 if np.log10(Masses[sim][halo]['Mstar'])<float(lim):
-                    ell_l[i] = 1-ProjData[sim][halo][angle]['b/a']
+                    ell_l[i] = 1-PlotDict[sim][halo][angle]['b/a']
                     sb_l[i] = ProfData[sim][halo][angle]['lum_den'][0]
                     ell_h[i] = np.NaN
                     sb_h[i] = np.NaN
                 else:
                     ell_l[i] = np.NaN
                     sb_l[i] = np.NaN
-                    ell_h[i] = 1-ProjData[sim][halo][angle]['b/a']
+                    ell_h[i] = 1-PlotDict[sim][halo][angle]['b/a']
                     sb_h[i] = ProfData[sim][halo][angle]['lum_den'][0]
                 if n==n_itr-1:
                     ell_ind,sb_ind = [],[]
                     ell_ind_l,sb_ind_l,ell_ind_h,sb_ind_h = [],[],[],[]
                     for a in ProfData[sim][halo]:
-                        ell_ind.append(1-ProjData[sim][halo][a]['b/a'])
+                        ell_ind.append(1-PlotDict[sim][halo][a]['b/a'])
                         sb_ind.append(ProfData[sim][halo][a]['lum_den'][0])
                         if np.log10(Masses[sim][halo]['Mstar'])<float(lim):
-                            ell_ind_l.append(1-ProjData[sim][halo][a]['b/a'])
+                            ell_ind_l.append(1-PlotDict[sim][halo][a]['b/a'])
                             sb_ind_l.append(ProfData[sim][halo][a]['lum_den'][0])
                             ell_ind_h.append(np.NaN)
                             sb_ind_h.append(np.NaN)
                         else:
                             ell_ind_l.append(np.NaN)
                             sb_ind_l.append(np.NaN)
-                            ell_ind_h.append(1-ProjData[sim][halo][a]['b/a'])
+                            ell_ind_h.append(1-PlotDict[sim][halo][a]['b/a'])
                             sb_ind_h.append(ProfData[sim][halo][a]['lum_den'][0])
                     ind_r[i]=correlation(ell_ind,sb_ind)
                     ind_r_low[i]=correlation(ell_ind_l,sb_ind_l)
@@ -227,7 +231,7 @@ if Morphology:
         for sim in ProfData:
             for halo in ProfData[sim]:
                 angle = randomorientation()
-                ell[i] = 1-ProjData[sim][halo][angle]['b/a']
+                ell[i] = 1-PlotDict[sim][halo][angle]['b/a']
                 sb[i] = ProfData[sim][halo][angle]['lum_den'][0]
                 try:
                     Reff = ProfData[sim][halo][angle]['Reff']
@@ -237,30 +241,30 @@ if Morphology:
                     ba,ca = np.NaN,np.NaN
                     #if n==n_itr-1: print(f'{sim} - {halo}')
                 if not Oblate(ba,ca):
-                    ell_l[i] = 1-ProjData[sim][halo][angle]['b/a']
+                    ell_l[i] = 1-PlotDict[sim][halo][angle]['b/a']
                     sb_l[i] = ProfData[sim][halo][angle]['lum_den'][0]
                     ell_h[i] = np.NaN
                     sb_h[i] = np.NaN
                 else:
                     ell_l[i] = np.NaN
                     sb_l[i] = np.NaN
-                    ell_h[i] = 1-ProjData[sim][halo][angle]['b/a']
+                    ell_h[i] = 1-PlotDict[sim][halo][angle]['b/a']
                     sb_h[i] = ProfData[sim][halo][angle]['lum_den'][0]
                 if n==n_itr-1:
                     ell_ind,sb_ind = [],[]
                     ell_ind_l,sb_ind_l,ell_ind_h,sb_ind_h = [],[],[],[]
                     for a in ProfData[sim][halo]:
-                        ell_ind.append(1-ProjData[sim][halo][a]['b/a'])
+                        ell_ind.append(1-PlotDict[sim][halo][a]['b/a'])
                         sb_ind.append(ProfData[sim][halo][a]['lum_den'][0])
                         if not Oblate(ba,ca):
-                            ell_ind_l.append(1-ProjData[sim][halo][a]['b/a'])
+                            ell_ind_l.append(1-PlotDict[sim][halo][a]['b/a'])
                             sb_ind_l.append(ProfData[sim][halo][a]['lum_den'][0])
                             ell_ind_h.append(np.NaN)
                             sb_ind_h.append(np.NaN)
                         else:
                             ell_ind_l.append(np.NaN)
                             sb_ind_l.append(np.NaN)
-                            ell_ind_h.append(1-ProjData[sim][halo][a]['b/a'])
+                            ell_ind_h.append(1-PlotDict[sim][halo][a]['b/a'])
                             sb_ind_h.append(ProfData[sim][halo][a]['lum_den'][0])
                     ind_r[i]=correlation(ell_ind,sb_ind)
                     ind_r_low[i]=correlation(ell_ind_l,sb_ind_l)
@@ -308,7 +312,7 @@ if Scatter:
         for halo in ProfData[sim]:
             ell,sb = [],[]
             for a in ProfData[sim][halo]:
-                ell.append(1-ProjData[sim][halo][a]['b/a'])
+                ell.append(1-PlotDict[sim][halo][a]['b/a'])
                 sb.append(ProfData[sim][halo][a]['lum_den'][0])
             IndR[sim][halo] = correlation(ell,sb)
     for i in np.arange(Nscat):
@@ -323,7 +327,7 @@ if Scatter:
         for sim in ProfData:
             for halo in ProfData[sim]:
                 angle = randomorientation()
-                E = 1-ProjData[sim][halo][angle]['b/a']
+                E = 1-PlotDict[sim][halo][angle]['b/a']
                 S = ProfData[sim][halo][angle]['lum_den'][0]
                 ell[j],sb[j] = E,S
                 R = IndR[sim][halo] 

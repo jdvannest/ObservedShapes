@@ -261,7 +261,7 @@ def SavePlot(logimage,iso,Rhalf,fname):
     else:
         ax.set_title(f'b/a: NaN  RMS: NaN  Manual: True',fontsize=15)
         f.savefig(fname,bbox_inches='tight',pad_inches=.1)
-        return({'ba':np.NaN,'a':np.NaN,'b':np.NaN})
+        return({'b/a':np.NaN,'a':np.NaN,'b':np.NaN})
 
 
 #Load sim-level data
