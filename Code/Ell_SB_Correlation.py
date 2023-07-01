@@ -58,7 +58,7 @@ Magnitudes = pickle.load(open('../Data/BasicData/Marvel_DCJL.Magnitudes.pickle',
 
 
 
-n_itr = int(1e5)
+n_itr = int(1e4)
 x = np.linspace(-1,1,500)
 Xu = True
 StellarMass = True
