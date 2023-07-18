@@ -89,7 +89,7 @@ def ln_prob_fn(alpha,observed_dist,bin_size):
 def initial(nwalk=32):
     pos,i = np.zeros((nwalk,4)),0
     while i<nwalk:
-        test = (normrand(0.75,.2),normrand(.5,.2),normrand(.2,.1),normrand(0.2,.1))
+        test = (normrand(0.75,.2),normrand(.5,.2),normrand(.1,.05),normrand(.1,.05))
         if priors(test)==1:
             pos[i]=test
             i+=1
@@ -124,96 +124,111 @@ for halo in halos:
     print(f'Running {args.simulation} - {halo}')
     if not args.overwrite and halo in MCMCData:continue
     MCMCData[str(halo)] = {}
-
-    #Create observed distributions from isophote ellipses and projected instrinsic ellipsoids
-    observed_dist_isophote = observed_dist(IsophoteData[str(halo)])
-    observed_dist_projected = observed_dist(ProjectedData[str(halo)])
+    for type in ['Isophote','Projected']:
+        alpha = {}
+        for i in [16,50,84]:
+            alpha[f'alpha_{i}'] = (np.NaN,np.NaN,np.NaN,np.NaN)
+        MCMCData[str(halo)][type] = alpha
     
+    #Create observed distributions from isophote ellipses and projected instrinsic ellipsoids
+    types = []
+    observed_dist_isophote = observed_dist(IsophoteData[str(halo)])
+    if len(observed_dist_isophote[np.isnan(observed_dist_isophote)])/len(observed_dist_isophote)<.5:
+        types.append(0)
+    observed_dist_projected = observed_dist(ProjectedData[str(halo)])
+    if len(observed_dist_projected[np.isnan(observed_dist_projected)])/len(observed_dist_projected)<.5:
+        types.append(1)
+
     #Find the "True" B/A,C/A for comparison distribution
-    Reffs = []
-    for angle in ProfileData[str(halo)]:
-        Reffs.append(ProfileData[str(halo)][angle]['Reff'])
-    Reff = np.nanmean(Reffs)
-    ind_eff = np.argmin(abs(TrueData[str(halo)]['rbins']-Reff))
-    alpha_true = (TrueData[str(halo)]['ba'][ind_eff],TrueData[str(halo)]['ca'][ind_eff],0,0)
-    true_dist = predicted_dist(alpha_true)
+    try:
+        Reff = ProfileData[str(halo)]['x000y000']['Rhalf']
+        ind_eff = np.argmin(abs(TrueData[str(halo)]['rbins']-Reff))
+        alpha_true = (TrueData[str(halo)]['ba'][ind_eff],TrueData[str(halo)]['ca'][ind_eff],0,0)
+        true_dist = predicted_dist(alpha_true)
+    except:
+        alpha_true = (np.NaN,np.NaN,np.NaN,np.NaN)
+        true_dist = np.array([])
 
     #Run emcee on 10 cores for Isophote and Projected Data
     nwalk,ndim,nstep,burnin = 32,4,3000,100
     dists,titles = [observed_dist_isophote,observed_dist_projected],['Isophote','Projected']
-    for type in [0,1]:
-        pool = multiprocessing.Pool(args.numproc)
-        sampler = emcee.EnsembleSampler(nwalk,ndim,ln_prob_fn,args=(dists[type],.04),pool=pool)
-        sampler.run_mcmc(initial(nwalk),nstep,progress=True)
-        samples = sampler.get_chain()
-        flat_samples = sampler.get_chain(discard=burnin,flat=True)
+    for type in types:
+        try:
+            pool = multiprocessing.Pool(args.numproc)
+            sampler = emcee.EnsembleSampler(nwalk,ndim,ln_prob_fn,args=(dists[type],.04),pool=pool)
+            sampler.run_mcmc(initial(nwalk),nstep,progress=True)
+            samples = sampler.get_chain()
+            flat_samples = sampler.get_chain(discard=burnin,flat=True)
 
 
-        #Plot the walkers
-        f,axes = plt.subplots(4, figsize=(10, 7), sharex=True)
-        labels = [r'$\mu_B$', r"$\mu_C$", r"$\sigma_B$",r"$\sigma_C$"]
-        for i in range(ndim):
-            ax = axes[i]
-            ax.plot(samples[:, :, i], "k", alpha=0.3)
-            ax.set_xlim(0, len(samples))
-            ax.set_ylabel(labels[i])
-            if i in [0,1]: ax.set_ylim([0,1])
-            else: ax.set_ylim([0,.5])
-        axes[-1].set_xlabel("step number")
-        f.savefig(f'../Images/MCMC/{args.simulation}.{args.feedback}/{halo}.{titles[type]}.Walkers.png',bbox_inches='tight',pad_inches=.1)
+            #Plot the walkers
+            f,axes = plt.subplots(4, figsize=(10, 7), sharex=True)
+            labels = [r'$\mu_B$', r"$\mu_C$", r"$\sigma_B$",r"$\sigma_C$"]
+            for i in range(ndim):
+                ax = axes[i]
+                ax.plot(samples[:, :, i], "k", alpha=0.3)
+                ax.set_xlim(0, len(samples))
+                ax.set_ylabel(labels[i])
+                if i in [0,1]: ax.set_ylim([0,1])
+                else: ax.set_ylim([0,.5])
+            axes[-1].set_xlabel("step number")
+            f.savefig(f'../Images/MCMC/{args.simulation}.{args.feedback}/{halo}.{titles[type]}.Walkers.png',bbox_inches='tight',pad_inches=.1)
 
 
-        #Generate Corner Plots
-        f = corner.corner(flat_samples[:,:2],labels=labels[:2],truths=alpha_true[:2],quantiles=[0.16, 0.5, 0.84],
-                            show_titles=True,title_kwargs={"fontsize": 17},label_kwargs={"fontsize": 17})
-        axes = np.array(f.axes).reshape((2,2))
-        for yi in range(2):
-            for xi in range(yi):
-                ax = axes[yi, xi]
-                ax.tick_params(which='both',labelsize=12)
-        for i in range(2):
-            axes[i,i].tick_params(which='both',labelsize=12)
-        f.savefig(f'../Images/MCMC/{args.simulation}.{args.feedback}/{halo}.{titles[type]}.Corner.Zoom.png',bbox_inches='tight',pad_inches=.1)
-        
-        f = corner.corner(flat_samples[:,:2],labels=labels[:2],truths=alpha_true[:2],quantiles=[0.16, 0.5, 0.84],
-                            show_titles=True,title_kwargs={"fontsize": 17},label_kwargs={"fontsize": 17})
-        axes = np.array(f.axes).reshape((2,2))
-        for yi in range(2):
-            for xi in range(yi):
-                ax = axes[yi, xi]
-                ax.set_xlim([0,1])
-                ax.set_ylim([0,1])
-                ax.set_xticks([.25,.5,.75,1])
-                ax.set_yticks([.25,.5,.75,1])
-                ax.tick_params(which='both',labelsize=12)
-        for i in range(2):
-            axes[i,i].set_xlim([0,1])
-            axes[i,i].set_xticks([.25,.5,.75,1])
-            axes[i,i].tick_params(which='both',labelsize=12)
-        f.savefig(f'../Images/MCMC/{args.simulation}.{args.feedback}/{halo}.{titles[type]}.Corner.png',bbox_inches='tight',pad_inches=.1)
+            #Generate Corner Plots
+            f = corner.corner(flat_samples[:,:2],labels=labels[:2],truths=alpha_true[:2],quantiles=[0.16, 0.5, 0.84],
+                                show_titles=True,title_kwargs={"fontsize": 17},label_kwargs={"fontsize": 17})
+            axes = np.array(f.axes).reshape((2,2))
+            for yi in range(2):
+                for xi in range(yi):
+                    ax = axes[yi, xi]
+                    ax.tick_params(which='both',labelsize=12)
+            for i in range(2):
+                axes[i,i].tick_params(which='both',labelsize=12)
+            f.savefig(f'../Images/MCMC/{args.simulation}.{args.feedback}/{halo}.{titles[type]}.Corner.Zoom.png',bbox_inches='tight',pad_inches=.1)
+            
+            f = corner.corner(flat_samples[:,:2],labels=labels[:2],truths=alpha_true[:2],quantiles=[0.16, 0.5, 0.84],
+                                show_titles=True,title_kwargs={"fontsize": 17},label_kwargs={"fontsize": 17})
+            axes = np.array(f.axes).reshape((2,2))
+            for yi in range(2):
+                for xi in range(yi):
+                    ax = axes[yi, xi]
+                    ax.set_xlim([0,1])
+                    ax.set_ylim([0,1])
+                    ax.set_xticks([.25,.5,.75,1])
+                    ax.set_yticks([.25,.5,.75,1])
+                    ax.tick_params(which='both',labelsize=12)
+            for i in range(2):
+                axes[i,i].set_xlim([0,1])
+                axes[i,i].set_xticks([.25,.5,.75,1])
+                axes[i,i].tick_params(which='both',labelsize=12)
+            f.savefig(f'../Images/MCMC/{args.simulation}.{args.feedback}/{halo}.{titles[type]}.Corner.png',bbox_inches='tight',pad_inches=.1)
 
 
-        #Write out alpha data
-        alpha = {}
-        for i in [16,50,84]:
-            alpha[f'alpha_{i}'] = (np.percentile(flat_samples[:, 0],i/100),
-                                   np.percentile(flat_samples[:, 1],i/100),
-                                   np.percentile(flat_samples[:, 2],i/100),
-                                   np.percentile(flat_samples[:, 3],i/100))
-        
+            #Write out alpha data
+            alpha = {}
+            for i in [16,50,84]:
+                alpha[f'alpha_{i}'] = (np.percentile(flat_samples[:, 0],i/100),
+                                    np.percentile(flat_samples[:, 1],i/100),
+                                    np.percentile(flat_samples[:, 2],i/100),
+                                    np.percentile(flat_samples[:, 3],i/100))
+            
 
-        #Plot distribtions
-        bins = np.linspace(0,1,26)
-        f,ax = plt.subplots(1,1)
-        ax.hist(dists[type],bins,histtype='step',edgecolor='k',linewidth=2,density=True,label='Observed')
-        ax.hist(predicted_dist(alpha['alpha_50']),bins,histtype='step',edgecolor='r',linewidth=2,density=True,label='Predicted')
-        ax.hist(predicted_dist(alpha_true),bins,histtype='step',edgecolor='b',linewidth=2,density=True,label='"True"')
-        ax.set_ylabel('Normalized Distribution',fontsize=17)
-        ax.set_xlabel(r'b/a',fontsize=17)
-        ax.tick_params(which='both',labelsize=12)
-        ax.set_xlim([0,1])
-        ax.legend(loc='upper left',prop={'size':12})
-        f.savefig(f'../Images/MCMC/{args.simulation}.{args.feedback}/{halo}.{titles[type]}.Distriburions.png',bbox_inches='tight',pad_inches=.1)
+            #Plot distribtions
+            bins = np.linspace(0,1,26)
+            f,ax = plt.subplots(1,1)
+            ax.hist(dists[type],bins,histtype='step',edgecolor='k',linewidth=2,density=True,label='Observed')
+            ax.hist(predicted_dist(alpha['alpha_50']),bins,histtype='step',edgecolor='r',linewidth=2,density=True,label='Predicted')
+            ax.hist(predicted_dist(alpha_true),bins,histtype='step',edgecolor='b',linewidth=2,density=True,label='"True"')
+            ax.set_ylabel('Normalized Distribution',fontsize=17)
+            ax.set_xlabel(r'b/a',fontsize=17)
+            ax.tick_params(which='both',labelsize=12)
+            ax.set_xlim([0,1])
+            ax.legend(loc='upper left',prop={'size':12})
+            f.savefig(f'../Images/MCMC/{args.simulation}.{args.feedback}/{halo}.{titles[type]}.Distriburions.png',bbox_inches='tight',pad_inches=.1)
+
+        except:
+            err = 1
 
         #Write out data after each halo
         MCMCData[str(halo)][titles[type]] = alpha

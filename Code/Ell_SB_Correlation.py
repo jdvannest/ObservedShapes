@@ -47,7 +47,7 @@ FIRE_y = FIRE_Data['Y'].tolist()
 
 
 ProfData,ProjData,MorphData,ShapeData,nhalo = {},{},{},{},0
-for sim in ['h148','h229','h242','h329']:#['cptmarvel','elektra','storm','rogue']:
+for sim in ['h148','h229','h242','h329','cptmarvel','elektra','storm','rogue']:
     ProfData[sim]=pickle.load(open(f'../Data/{sim}.BW.Profiles.pickle','rb'))
     ProjData[sim]=pickle.load(open(f'../Data/{sim}.BW.ProjectedData.pickle','rb'))
     MorphData[sim]=pickle.load(open(f'../Data/{sim}.BW.3DShapes.pickle','rb'))
@@ -122,7 +122,7 @@ if Xu:
         ax.axvspan(obs[0]-obs[1],obs[0]+obs[1],color=obs[2],alpha=.3)
 
     density = stats.gaussian_kde(r_dist)
-    ax.plot(x,density(x),c='k',linewidth=3,label='DCJL Simulations')
+    ax.plot(x,density(x),c='k',linewidth=3,label='Marvel+DCJL Simulations')
     ax.set_ylim(bottom=0)
     ax.legend(loc='lower right',prop={'size':12})
     #plt.show()

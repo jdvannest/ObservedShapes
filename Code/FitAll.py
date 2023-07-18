@@ -7,10 +7,15 @@ args = parser.parse_args()
 
 loop = True
 while loop:
-    method = input('Fit Isophotes or Project 3D Ellipsoids (I/3): ')
-    if method in ['I','3']:
+    method = input('Fit Isophotes, Project 3D Ellipsoids, or Run MCMC (I/3/M): ')
+    if method in ['I','3','M']:
         loop = False
-        script = 'IsophoteFitting.py' if method=='I' else '2DShapeProjection.py -p'
+        if method=='I':
+            script = 'IsophoteFitting.py'
+        elif method=='3':
+            script = '2DShapeProjection.py -p'
+        else:
+            script = 'MCMC.py'
 
 for feedback in ['BW','SB']:
     sims = pickle.load(open(f'SimulationInfo.{feedback}.pickle','rb'))
