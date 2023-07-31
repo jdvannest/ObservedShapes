@@ -3,12 +3,18 @@ import numpy as np
 from pandas import *
 import scipy.stats as stats
 import matplotlib.pylab as plt
+from scipy.optimize import curve_fit
 def myprint(string,clear=False):
     if clear:
         sys.stdout.write("\033[F")
         sys.stdout.write("\033[K") 
     print(string)
 warnings.filterwarnings("ignore")
+
+def sersic(r, mueff, reff, n):
+    return mueff + 2.5*(0.868*n-0.142)*((r/reff)**(1./n) - 1)
+def func(x, a, c, d):
+    return a*np.exp(-c*x)+d
 
 def correlation(ell,sb):
     if not isinstance(ell,np.ndarray): ell = np.array(ell)
@@ -56,13 +62,28 @@ for sim in ['h148','h229','h242','h329','cptmarvel','elektra','storm','rogue']:
 Masses = pickle.load(open('../Data/BasicData/Marvel_DCJL.Masses.pickle','rb'))
 Magnitudes = pickle.load(open('../Data/BasicData/Marvel_DCJL.Magnitudes.pickle','rb'))
 
+#Get central lum_den values from array fit
+for sim in ['h148','h229','h242','h329','cptmarvel','elektra','storm','rogue']:
+    for halo in ProfData[sim]:
+        for angle in ProfData[sim][halo]:
+            try:
+                lum = ProfData[sim][halo][angle]['lum_den']
+                rbins = ProfData[sim][halo][angle]['rbins']
+                rbins = rbins[~np.isnan(lum)]
+                lum = lum[~np.isnan(lum)]
+                par,ign = curve_fit(func,rbins,lum)
+                ProfData[sim][halo][angle]['Sigma0'] = func(0,par[0],par[1],par[2])
+            except:
+                print(f'{sim}-{halo}-{angle}')
+                ProfData[sim][halo][angle]['Sigma0'] = np.NaN#ProfData[sim][halo][angle]['lum_den'][0]
+
 
 
 n_itr = int(1e4)
 x = np.linspace(-1,1,500)
 Xu = True
-StellarMass = True
-Morphology = True
+StellarMass = False
+Morphology = False
 Scatter,Nscat = True,10
 PlotDict = ShapeData
 
@@ -78,12 +99,12 @@ if Xu:
             for halo in ProfData[sim]:
                 angle = randomorientation()
                 ell[i] = 1-PlotDict[sim][halo][angle]['b/a']
-                sb[i] = ProfData[sim][halo][angle]['lum_den'][0]
+                sb[i] = ProfData[sim][halo][angle]['Sigma0']
                 if n==n_itr-1:
                     ell_ind,sb_ind = [],[]
                     for a in ProfData[sim][halo]:
                         ell_ind.append(1-PlotDict[sim][halo][a]['b/a'])
-                        sb_ind.append(ProfData[sim][halo][a]['lum_den'][0])
+                        sb_ind.append(ProfData[sim][halo][a]['Sigma0'])
                     ind_r[i] = correlation(ell_ind,sb_ind)
                 i+=1
 
@@ -96,9 +117,9 @@ if Xu:
     for sim in ProfData:
         for halo in ProfData[sim]:
             ell_f[i] = 1-PlotDict[sim][halo]['x000y000']['b/a']
-            sb_f[i] = ProfData[sim][halo]['x000y000']['lum_den'][0]
+            sb_f[i] = ProfData[sim][halo]['x000y000']['Sigma0']
             ell_s[i] = 1-PlotDict[sim][halo]['x090y000']['b/a']
-            sb_s[i] = ProfData[sim][halo]['x090y000']['lum_den'][0]
+            sb_s[i] = ProfData[sim][halo]['x090y000']['Sigma0']
             i+=1
     r_face = correlation(ell_f,sb_f)
     r_side = correlation(ell_s,sb_s)
@@ -151,33 +172,33 @@ for lim in limits:
             for halo in ProfData[sim]:
                 angle = randomorientation()
                 ell[i] = 1-PlotDict[sim][halo][angle]['b/a']
-                sb[i] = ProfData[sim][halo][angle]['lum_den'][0]
+                sb[i] = ProfData[sim][halo][angle]['Sigma0']
                 if np.log10(Masses[sim][halo]['Mstar'])<float(lim):
                     ell_l[i] = 1-PlotDict[sim][halo][angle]['b/a']
-                    sb_l[i] = ProfData[sim][halo][angle]['lum_den'][0]
+                    sb_l[i] = ProfData[sim][halo][angle]['Sigma0']
                     ell_h[i] = np.NaN
                     sb_h[i] = np.NaN
                 else:
                     ell_l[i] = np.NaN
                     sb_l[i] = np.NaN
                     ell_h[i] = 1-PlotDict[sim][halo][angle]['b/a']
-                    sb_h[i] = ProfData[sim][halo][angle]['lum_den'][0]
+                    sb_h[i] = ProfData[sim][halo][angle]['Sigma0']
                 if n==n_itr-1:
                     ell_ind,sb_ind = [],[]
                     ell_ind_l,sb_ind_l,ell_ind_h,sb_ind_h = [],[],[],[]
                     for a in ProfData[sim][halo]:
                         ell_ind.append(1-PlotDict[sim][halo][a]['b/a'])
-                        sb_ind.append(ProfData[sim][halo][a]['lum_den'][0])
+                        sb_ind.append(ProfData[sim][halo][a]['Sigma0'])
                         if np.log10(Masses[sim][halo]['Mstar'])<float(lim):
                             ell_ind_l.append(1-PlotDict[sim][halo][a]['b/a'])
-                            sb_ind_l.append(ProfData[sim][halo][a]['lum_den'][0])
+                            sb_ind_l.append(ProfData[sim][halo][a]['Sigma0'])
                             ell_ind_h.append(np.NaN)
                             sb_ind_h.append(np.NaN)
                         else:
                             ell_ind_l.append(np.NaN)
                             sb_ind_l.append(np.NaN)
                             ell_ind_h.append(1-PlotDict[sim][halo][a]['b/a'])
-                            sb_ind_h.append(ProfData[sim][halo][a]['lum_den'][0])
+                            sb_ind_h.append(ProfData[sim][halo][a]['Sigma0'])
                     ind_r[i]=correlation(ell_ind,sb_ind)
                     ind_r_low[i]=correlation(ell_ind_l,sb_ind_l)
                     ind_r_high[i]=correlation(ell_ind_h,sb_ind_h)
@@ -232,7 +253,7 @@ if Morphology:
             for halo in ProfData[sim]:
                 angle = randomorientation()
                 ell[i] = 1-PlotDict[sim][halo][angle]['b/a']
-                sb[i] = ProfData[sim][halo][angle]['lum_den'][0]
+                sb[i] = ProfData[sim][halo][angle]['Sigma0']
                 try:
                     Reff = ProfData[sim][halo][angle]['Reff']
                     ind_eff = np.argmin(abs(MorphData[sim][halo]['rbins']-Reff))
@@ -242,30 +263,30 @@ if Morphology:
                     #if n==n_itr-1: print(f'{sim} - {halo}')
                 if not Oblate(ba,ca):
                     ell_l[i] = 1-PlotDict[sim][halo][angle]['b/a']
-                    sb_l[i] = ProfData[sim][halo][angle]['lum_den'][0]
+                    sb_l[i] = ProfData[sim][halo][angle]['Sigma0']
                     ell_h[i] = np.NaN
                     sb_h[i] = np.NaN
                 else:
                     ell_l[i] = np.NaN
                     sb_l[i] = np.NaN
                     ell_h[i] = 1-PlotDict[sim][halo][angle]['b/a']
-                    sb_h[i] = ProfData[sim][halo][angle]['lum_den'][0]
+                    sb_h[i] = ProfData[sim][halo][angle]['Sigma0']
                 if n==n_itr-1:
                     ell_ind,sb_ind = [],[]
                     ell_ind_l,sb_ind_l,ell_ind_h,sb_ind_h = [],[],[],[]
                     for a in ProfData[sim][halo]:
                         ell_ind.append(1-PlotDict[sim][halo][a]['b/a'])
-                        sb_ind.append(ProfData[sim][halo][a]['lum_den'][0])
+                        sb_ind.append(ProfData[sim][halo][a]['Sigma0'])
                         if not Oblate(ba,ca):
                             ell_ind_l.append(1-PlotDict[sim][halo][a]['b/a'])
-                            sb_ind_l.append(ProfData[sim][halo][a]['lum_den'][0])
+                            sb_ind_l.append(ProfData[sim][halo][a]['Sigma0'])
                             ell_ind_h.append(np.NaN)
                             sb_ind_h.append(np.NaN)
                         else:
                             ell_ind_l.append(np.NaN)
                             sb_ind_l.append(np.NaN)
                             ell_ind_h.append(1-PlotDict[sim][halo][a]['b/a'])
-                            sb_ind_h.append(ProfData[sim][halo][a]['lum_den'][0])
+                            sb_ind_h.append(ProfData[sim][halo][a]['Sigma0'])
                     ind_r[i]=correlation(ell_ind,sb_ind)
                     ind_r_low[i]=correlation(ell_ind_l,sb_ind_l)
                     ind_r_high[i]=correlation(ell_ind_h,sb_ind_h)
@@ -313,7 +334,7 @@ if Scatter:
             ell,sb = [],[]
             for a in ProfData[sim][halo]:
                 ell.append(1-PlotDict[sim][halo][a]['b/a'])
-                sb.append(ProfData[sim][halo][a]['lum_den'][0])
+                sb.append(ProfData[sim][halo][a]['Sigma0'])
             IndR[sim][halo] = correlation(ell,sb)
     for i in np.arange(Nscat):
         f,ax = plt.subplots(1,1,figsize=(8,6))
@@ -328,7 +349,7 @@ if Scatter:
             for halo in ProfData[sim]:
                 angle = randomorientation()
                 E = 1-PlotDict[sim][halo][angle]['b/a']
-                S = ProfData[sim][halo][angle]['lum_den'][0]
+                S = ProfData[sim][halo][angle]['Sigma0']
                 ell[j],sb[j] = E,S
                 R = IndR[sim][halo] 
                 t = np.arctan(R)
