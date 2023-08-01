@@ -11,18 +11,6 @@ from matplotlib.collections import PatchCollection
 
 SimInfo = pickle.load(open('../SimulationInfo.BW.pickle','rb'))
 
-# loop,remake=True,False
-# while loop:
-#     rem = input('Remake Image Directory: Images/Interpolation/- (y/n): ')
-#     if rem in ['y','n']:
-#         loop = False
-#         if rem=='y': remake = True
-# if remake: 
-#     os.system('rmdir -f ../Images/Interpolation')
-#     os.system('mkdir ../Images/Interpolation')
-#     for sim in SimInfo:
-#         os.system(f'mkdir ../Images/Interpolation/{sim}.BW/')
-
 def PadData(data):
     '''
     RegularGridInterpolator has hard boundar cuts at data edges.
@@ -64,111 +52,52 @@ def FillNaN(data):
         data[x][y] = fill[i]
     return data,bad,fill
     
+ShapeData = pickle.load(open('Storm.3.ShapeData.pickle','rb'))
+xang_s,yang_s = np.arange(90,160,10),np.arange(150,220,10)
+xang_b,yang_b = np.arange(90,180,30),np.arange(150,240,30)
 
+plot_s = np.zeros((len(xang_s),len(yang_s)))
+plot_b = np.zeros((len(xang_b),len(yang_b)))
+for x in np.arange(len(xang_s)):
+    for y in np.arange(len(yang_s)):
+        plot_s[x][y] = ShapeData[f'x{x*30:03d}y{y*30:03d}']['b/a']
+for x in np.arange(len(xang_b)):
+    for y in np.arange(len(yang_b)):
+        plot_b[x][y] = ShapeData[f'x{x*30:03d}y{y*30:03d}']['b/a']
 
+inter = RGI(points=(xang_b,yang_b),values=plot_b,method='cubic')
 
-norm = plt.Normalize(0,1)
-xang = np.arange(0,180,30)
-yang = np.arange(0,360,30)
-Yedge = np.arange(-15,185,30)
-Xedge = np.arange(-15,375,30)
-Xgrid,Ygrid = np.meshgrid(yang,xang)
-Xgrid_inter,Ygrid_inter = np.meshgrid(np.arange(0,390,30),np.arange(0,210,30))
-ptszip = zip(Xgrid.ravel(),Ygrid.ravel())
-xang_fill = np.arange(0,210,30)
-yang_fill = np.arange(0,390,30)
-Yedge_fill = np.arange(-15,215,30)
-Xedge_fill = np.arange(-15,405,30)
+# xang,yang = np.arange(90,151),np.arange(150,211)
+# X,Y = np.meshgrid(xang,yang)
+# pts = zip(X.ravel(),Y.ravel())
 
+diffplot = np.zeros((len(xang_s),len(yang_s)))
+rms = []
+for x in np.arange(len(xang_s)):
+    for y in np.arange(len(yang_s)):
+        diffplot = plot_s[x][y] - inter((xang_s[x],yang_s[y]))
+        rms.append(plot_s[x][y] - inter((xang_s[x],yang_s[y])))
 
+f,ax = plt.subplots(1,1,figsize=(12,8))
+ax.tick_params(labelsize=15)
+ax.set_xticks(xang_s)
+ax.set_yticks(yang_s)
+ax.set_xlim([-15,345])
+ax.set_ylim([-15,165])
+ax.set_xlabel(r'$\phi$-rotation [$^o$]',fontsize=25)
+ax.set_ylabel(r'$\theta$-rotation [$^o$]',fontsize=25)
 
-for sim in SimInfo:
-    Shapes = pickle.load(open(f'../../Data/{sim}.BW.ShapeData.pickle','rb'))
-    for hid in SimInfo[sim]['halos']:
-        plot = np.zeros((len(xang),len(yang)))
-        Z3 = np.zeros(Xgrid.shape)
-        for x in np.arange(len(xang)):
-            for y in np.arange(len(yang)):
-                plot[x][y] = Shapes[str(hid)][f'x{x*30:03d}y{y*30:03d}']['b/a']
-                Z3[x][y] = Shapes[str(hid)][f'x{Ygrid[:,0][x]:03d}y{Xgrid[0][y]:03d}']['b/a']
-        
-        f,ax = plt.subplots(1,1,figsize=(12,8))
-        ax.tick_params(labelsize=15)
-        ax.set_xticks(np.arange(0,375,30))
-        ax.set_yticks(np.arange(0,195,30))
-        ax.set_xlim([-15,345])
-        ax.set_ylim([-15,165])
-        ax.set_xlabel(r'$\phi$-rotation [$^o$]',fontsize=25)
-        ax.set_ylabel(r'$\theta$-rotation [$^o$]',fontsize=25)
+Xedge,Yedge = np.arange(85,165,10),np.arange(145,225,10)
+norm = plt.Normalize(-1,1)
+p = ax.pcolor(Xedge,Yedge,diffplot,cmap='seismic',edgecolors='k',norm=norm)
+c = f.colorbar(p,ax=ax,pad=0.01,aspect=15)
+c.set_label(r'$\Delta$(Data-Interpolation)',fontsize=25)
+c.ax.tick_params(labelsize=15)
+c.ax.plot([0,1],[np.amin(diffplot),np.amin(diffplot)],c='k') 
+c.ax.plot([0,1],[np.amax(diffplot),np.amax(diffplot)],c='k') 
 
-        p = ax.pcolor(Xedge,Yedge,plot,cmap='viridis',edgecolors='k',norm=norm)
-        c = f.colorbar(p,ax=ax,pad=0.01,aspect=15)
-        c.set_label('b/a',fontsize=25)
-        c.ax.tick_params(labelsize=15)
-        c.ax.plot([0,1],[np.amin(plot),np.amin(plot)],c='w') 
-        c.ax.plot([0,1],[np.amax(plot),np.amax(plot)],c='w') 
+f.savefig(f'DeltaGrid.png',bbox_inches='tight',pad_inches=.1)
+plt.close(f)
 
-        f.savefig(f'../../Images/Interpolation/{sim}.BW/{hid}.Data.png',bbox_inches='tight',pad_inches=.1)
-        plt.close(f)
-
-
-
-        f,ax = plt.subplots(1,1,figsize=(12,8))
-        ax.tick_params(labelsize=15)
-        ax.set_xticks(np.arange(0,405,30))
-        ax.set_yticks(np.arange(0,225,30))
-        ax.set_xlim([-15,375])
-        ax.set_ylim([-15,195])
-        ax.set_xlabel(r'$\phi$-rotation [$^o$]',fontsize=25)
-        ax.set_ylabel(r'$\theta$-rotation [$^o$]',fontsize=25)
-
-        plot,bad_p1,bad_d1 = FillNaN(plot)
-        plot_padded = PadData(plot)
-        plot_padded,bad_p2,bad_d2 = FillNaN(plot_padded)
-        if len(bad_d1)>0:
-            for i in np.arange(len(bad_p1)):
-                ax.add_patch(Rec((bad_p1[i][1]-5,bad_p1[i][0]-5),10,10,color='w'))
-        if len(bad_d2)>0:
-            for i in np.arange(len(bad_p2)):
-                ax.add_patch(Rec((bad_p2[i][1]-5,bad_p2[i][0]-5),10,10,color='w'))
-
-        p = ax.pcolor(Xedge_fill,Yedge_fill,plot_padded,cmap='viridis',edgecolors='k',norm=norm)
-        c = f.colorbar(p,ax=ax,pad=0.01,aspect=15)
-        c.set_label('b/a',fontsize=25)
-        c.ax.tick_params(labelsize=15)
-        c.ax.plot([0,1],[np.amin(plot),np.amin(plot)],c='w') 
-        c.ax.plot([0,1],[np.amax(plot),np.amax(plot)],c='w') 
-
-        f.savefig(f'../../Images/Interpolation/{sim}.BW/{hid}.Filled.png',bbox_inches='tight',pad_inches=.1)
-        plt.close(f)
-
-
-        #https://scipython.com/blog/non-linear-least-squares-fitting-of-a-two-dimensional-data/
-        if True in np.isnan(Z3): Z3,bad_p,bad_d = FillNaN(Z3)
-        Zpad = PadData(Z3)
-        inter = RGI(points=(Ygrid_inter[:,0],Xgrid_inter[0]),values=Zpad,method='cubic')
-        
-        # Plot the 3D figure 
-        # f = plt.figure()
-        # ax = f.gca(projection='3d')
-        # ax.set_xlabel(r'$\phi$-rotation [$^o$]',fontsize=15)
-        # ax.set_ylabel(r'$\theta$-rotation [$^o$]',fontsize=15)
-        # ax.set_zlabel('b/a',fontsize=15)
-        # ax.set_xticks(np.arange(0,375,30))
-        # ax.set_yticks(np.arange(0,195,30))
-        # ax.set_xlim([-15,345])
-        # ax.set_ylim([-15,165])
-        # ax.set_zlim(0,1)
-
-        # Xi,Yi = np.meshgrid(np.arange(0,360.5,.5),np.arange(0,180.5,.5))
-        # Zi = np.zeros(Xi.shape)
-        # for x in np.arange(Xi.shape[0]):
-        #     for y in np.arange(Xi.shape[1]):
-        #         Zi[x][y] = inter((Yi[:,0][x],Xi[0][y]))
-        # ax.plot_surface(Xi, Yi, Zi, cmap='viridis',norm=norm)
-        # for x in np.arange(len(xang)):
-        #     for y in np.arange(len(yang)):
-        #         z = Shapes[str(hid)][f'x{x*30:03d}y{y*30:03d}']['b/a']
-        #         ax.scatter(y*30,x*30,z,c='k')#c=z,cmap='viridis',norm=norm)
-
-        # plt.show()
+rms = np.array(rms)
+print(f'RMS: {np.sqrt((rms**2).sum())}')
