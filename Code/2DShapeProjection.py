@@ -28,6 +28,17 @@ Images = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.Images.pic
 Profiles = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.Profiles.pickle','rb'))
 Shapes = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.3DShapes.pickle','rb'))
 
+smooth = {
+    'cptmarvel':[1,2,3,5,6,7,10,11,13],
+    'elektra':[2,3,4,5,9,10,12,17,36],
+    'storm':[2,3,4,5,6,7,8,14,15,23,31,44],
+    'rogue':[7,8,10,11,12,15,16,17,28,31],
+    'h148':[3,4,6,7,11,12,13,15,20,23,27,28,33,34,38,65,114],
+    'h229':[2,3,6,14,18,22,49,92],
+    'h242':[8,10,21,26,30,34,38],
+    'h329':[7,29,115,117]
+}
+
 ShapeData = pymp.shared.dict()
 prog=pymp.shared.array((1,),dtype=int)
 print(f'Projecting Ellipsoids for {args.simulation}: 0.000%')
@@ -45,6 +56,9 @@ with pymp.Parallel(args.numproc) as pl:
                     ind_eff = np.argmin(abs(rbins-Rhalf))
                     a,ba,ca,Es = [Shapes[str(hid)]['a'][ind_eff],Shapes[str(hid)]['ba'][ind_eff],
                                   Shapes[str(hid)]['ca'][ind_eff],Shapes[str(hid)]['Es'][ind_eff]]
+                    if int(hid) in smooth[f'{args.simulation}']:
+                        ba = float(Shapes[str(hid)]['ba_smooth'](Rhalf))
+                        ca = float(Shapes[str(hid)]['ca_smooth'](Rhalf))
                     x,y,z = Ellipsoid(a,ba,ca,Es,xrot,yrot)
                     x = -x
                     ap,bp,cen,phi = Project_OLD(x,y,z)

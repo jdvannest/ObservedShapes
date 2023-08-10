@@ -44,26 +44,15 @@ def predicted_dist(alpha,n_itr=1e3):
     return q_dist
 
 #Functions for observed distribution [n_i in eq (6)]
-def myround(x, base=5):
-    return base * round(x/base)
-def randomorientation(base=30):
+def randomorientation():
     phi = np.degrees(np.random.uniform(0,np.pi*2))
-    y = int(myround(phi,base=base))
     theta = np.degrees(np.arccos(np.random.uniform(-1,1)))
-    x = int(myround(theta,base=base))
-    if x>165:
-        x = x%180
-        y = (180-y)
-        if y<0:
-            y = y+360
-    if y == 360:
-        y = 0
-    return(f'x{x:03d}y{y:03d}')
-def observed_dist(halo_dict,n_itr=1e3):
+    return( (theta,phi) )
+def observed_dist(halo_inter,n_itr=1e3):
     q_dist = np.zeros(int(n_itr))
     for i in np.arange(n_itr):
         angle = randomorientation()
-        q_dist[int(i)] = halo_dict[angle]['b/a']
+        q_dist[int(i)] = float(halo_inter(angle))
     return q_dist
 
 # Ln of prob(q | alpha) [eq (6)]
@@ -115,8 +104,9 @@ SimInfo = pickle.load(open(f'SimulationInfo.{args.feedback}.pickle','rb'))
 halos = SimInfo[args.simulation]['halos']
 ProjectedData = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.ProjectedData.pickle','rb'))
 ProfileData = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.Profiles.pickle','rb'))
-IsophoteData = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.ShapeData.pickle','rb'))
+IsophoteData = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.InterpolationFunctions.pickle','rb'))
 TrueData = pickle.load(open(f'../Data/{args.simulation}.{args.feedback}.3DShapes.pickle','rb'))
+
 
 haloprog = 0
 #print(f'Running {args.simulation}: 0.00%')
@@ -131,6 +121,7 @@ for halo in halos:
         MCMCData[str(halo)][type] = alpha
     
     #Create observed distributions from isophote ellipses and projected instrinsic ellipsoids
+    if np.isnan(IsophoteData[str(halo)]): continue
     types = []
     observed_dist_isophote = observed_dist(IsophoteData[str(halo)])
     if len(observed_dist_isophote[np.isnan(observed_dist_isophote)])/len(observed_dist_isophote)<.5:

@@ -265,10 +265,10 @@ def SavePlot(logimage,iso,Rhalf,fname):
 
 
 #Load sim-level data
-sim,hid = 'storm', '3'
+sim,hid = 'Storm', '3'
 Images = pickle.load(open(f'{sim}.{hid}.Images.pickle','rb'))
 Profiles = pickle.load(open(f'{sim}.{hid}.Profiles.pickle','rb'))
-Masking = pickle.load(open(f'{sim}.{hid}.Profiles.pickle','rb'))
+Masking = pickle.load(open(f'{sim}.{hid}.Masking.pickle','rb'))
 try: ShapeData = pickle.load(open(f'{sim}.{hid}.ShapeData.pickle','rb'))
 except: ShapeData = {}
 

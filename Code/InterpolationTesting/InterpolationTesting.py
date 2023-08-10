@@ -52,52 +52,56 @@ def FillNaN(data):
         data[x][y] = fill[i]
     return data,bad,fill
     
-ShapeData = pickle.load(open('Storm.3.ShapeData.pickle','rb'))
-xang_s,yang_s = np.arange(90,160,10),np.arange(150,220,10)
-xang_b,yang_b = np.arange(90,180,30),np.arange(150,240,30)
+LowResFull = pickle.load(open(f'../../Data/storm.BW.ShapeData.pickle','rb'))
+LowRes = LowResFull['3']
+HighRes = pickle.load(open('Storm.3.ShapeData.pickle','rb'))
+xang_h,yang_h = np.arange(90,160,10),np.arange(150,220,10)
+xang_l,yang_l = np.arange(0,180,30),np.arange(0,360,30)
 
-plot_s = np.zeros((len(xang_s),len(yang_s)))
-plot_b = np.zeros((len(xang_b),len(yang_b)))
-for x in np.arange(len(xang_s)):
-    for y in np.arange(len(yang_s)):
-        plot_s[x][y] = ShapeData[f'x{x*30:03d}y{y*30:03d}']['b/a']
-for x in np.arange(len(xang_b)):
-    for y in np.arange(len(yang_b)):
-        plot_b[x][y] = ShapeData[f'x{x*30:03d}y{y*30:03d}']['b/a']
+plot_h = np.zeros((len(xang_h),len(yang_h)))
+plot_l = np.zeros((len(xang_l),len(yang_l)))
+for x in np.arange(len(xang_l)):
+    for y in np.arange(len(yang_l)):
+        plot_l[x][y] = LowRes[f'x{x*30:03d}y{y*30:03d}']['b/a']
+for x in np.arange(len(xang_h)):
+    for y in np.arange(len(yang_h)):
+        xa,ya = xang_h[x],yang_h[y]
+        plot_h[x][y] = HighRes[f'x{xa:03d}y{ya:03d}']['b/a']
 
-inter = RGI(points=(xang_b,yang_b),values=plot_b,method='cubic')
+inter = RGI(points=(xang_l,yang_l),values=plot_l,method='cubic')
 
 # xang,yang = np.arange(90,151),np.arange(150,211)
 # X,Y = np.meshgrid(xang,yang)
 # pts = zip(X.ravel(),Y.ravel())
 
-diffplot = np.zeros((len(xang_s),len(yang_s)))
-rms = []
-for x in np.arange(len(xang_s)):
-    for y in np.arange(len(yang_s)):
-        diffplot = plot_s[x][y] - inter((xang_s[x],yang_s[y]))
-        rms.append(plot_s[x][y] - inter((xang_s[x],yang_s[y])))
+diffplot = np.zeros((len(xang_h),len(yang_h)))
+err = []
+for x in np.arange(len(xang_h)):
+    for y in np.arange(len(yang_h)):
+        diffplot[x][y] = plot_h[x][y] - inter((xang_h[x],yang_h[y]))
+        err.append(plot_h[x][y] - inter((xang_h[x],yang_h[y])))
+Xedge,Yedge = np.arange(145,225,10),np.arange(85,165,10)
 
 f,ax = plt.subplots(1,1,figsize=(12,8))
 ax.tick_params(labelsize=15)
-ax.set_xticks(xang_s)
-ax.set_yticks(yang_s)
-ax.set_xlim([-15,345])
-ax.set_ylim([-15,165])
+#ax.set_xticks(xang_h)
+#ax.set_yticks(yang_h)
+ax.set_xlim([Xedge[0],Xedge[-1]])
+ax.set_ylim([Yedge[0],Yedge[-1]])
 ax.set_xlabel(r'$\phi$-rotation [$^o$]',fontsize=25)
 ax.set_ylabel(r'$\theta$-rotation [$^o$]',fontsize=25)
 
-Xedge,Yedge = np.arange(85,165,10),np.arange(145,225,10)
 norm = plt.Normalize(-1,1)
 p = ax.pcolor(Xedge,Yedge,diffplot,cmap='seismic',edgecolors='k',norm=norm)
 c = f.colorbar(p,ax=ax,pad=0.01,aspect=15)
 c.set_label(r'$\Delta$(Data-Interpolation)',fontsize=25)
 c.ax.tick_params(labelsize=15)
-c.ax.plot([0,1],[np.amin(diffplot),np.amin(diffplot)],c='k') 
-c.ax.plot([0,1],[np.amax(diffplot),np.amax(diffplot)],c='k') 
+c.ax.plot([-1,1],[np.amin(diffplot),np.amin(diffplot)],c='k') 
+c.ax.plot([-1,1],[np.amax(diffplot),np.amax(diffplot)],c='k') 
+
+err = np.array(err)
+rms = np.sqrt(np.mean(err**2))
+ax.set_title(f'RMS: {round(rms,3)}',fontsize=25)
 
 f.savefig(f'DeltaGrid.png',bbox_inches='tight',pad_inches=.1)
 plt.close(f)
-
-rms = np.array(rms)
-print(f'RMS: {np.sqrt((rms**2).sum())}')
