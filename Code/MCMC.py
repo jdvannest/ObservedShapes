@@ -121,14 +121,14 @@ for halo in halos:
         MCMCData[str(halo)][type] = alpha
     
     #Create observed distributions from isophote ellipses and projected instrinsic ellipsoids
-    if np.isnan(IsophoteData[str(halo)]): continue
+    if isinstance(IsophoteData[str(halo)],float): continue
     types = []
     observed_dist_isophote = observed_dist(IsophoteData[str(halo)])
     if len(observed_dist_isophote[np.isnan(observed_dist_isophote)])/len(observed_dist_isophote)<.5:
         types.append(0)
-    observed_dist_projected = observed_dist(ProjectedData[str(halo)])
-    if len(observed_dist_projected[np.isnan(observed_dist_projected)])/len(observed_dist_projected)<.5:
-        types.append(1)
+    observed_dist_projected = []#observed_dist(ProjectedData[str(halo)])
+    #if len(observed_dist_projected[np.isnan(observed_dist_projected)])/len(observed_dist_projected)<.5:
+    #    types.append(1)
 
     #Find the "True" B/A,C/A for comparison distribution
     try:
