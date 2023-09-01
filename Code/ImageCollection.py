@@ -67,11 +67,15 @@ with pymp.Parallel(args.numproc) as pl:
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['rbins'] = prof['rbins']
                     binarea,binlum = prof._binsize.in_units('pc^2'), 10.0 ** (-0.4 * prof['magnitudes,v'])
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['lum_den'] = binlum/binarea
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['mags,v'] = prof['magnitudes,v']
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['binarea'] = binarea
                 except:
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['sb,v'] = np.NaN
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['v_lum_den'] = np.NaN
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['rbins'] = np.NaN
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['lum_den'] = np.NaN
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['mags,v'] = np.NaN
+                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['binarea'] = np.NaN
                 if not type(current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['sb,v']) is float:
                     try:
                         vband = prof['sb,v']
