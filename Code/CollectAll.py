@@ -22,9 +22,9 @@ if type=='I':
         if im in ['y','n']: loop = False
     gen_im = '-i' if im=='y' else ''
 
-for feedback in ['BW']:#,'SB']:
+for feedback in ['BW','SB']:
     sims = pickle.load(open(f'SimulationInfo.{feedback}.pickle','rb'))
-    for s in ['h148','h229','h242','h329']:#sims:
+    for s in sims:
         if type=='I':
             os.system(f"{config['python_path']} ImageCollection.py -f {feedback} -s {s} {gen_im} -n {args.numproc} {verbose} {overwrite}")
         elif type=='S':
