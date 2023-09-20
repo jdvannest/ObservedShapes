@@ -21,6 +21,12 @@ if type=='I':
         im = input('Generate images in addition to Profiles? (y/n): ')
         if im in ['y','n']: loop = False
     gen_im = '-i' if im=='y' else ''
+elif type=='S':
+    loop = True
+    while loop:
+        im = input('Stellar Shapes or DM Shapes (S/D): ')
+        if im in ['S','D']: loop = False
+    stype = '3D' if im=='S' else 'DM'
 
 for feedback in ['BW','SB']:
     sims = pickle.load(open(f'SimulationInfo.{feedback}.pickle','rb'))
@@ -28,4 +34,4 @@ for feedback in ['BW','SB']:
         if type=='I':
             os.system(f"{config['python_path']} ImageCollection.py -f {feedback} -s {s} {gen_im} -n {args.numproc} {verbose} {overwrite}")
         elif type=='S':
-            os.system(f"{config['python_path']} 3DShapeCollection.py -f {feedback} -s {s} -n {args.numproc} {verbose}")
+            os.system(f"{config['python_path']} {stype}ShapeCollection.py -f {feedback} -s {s} -n {args.numproc} {verbose}")
