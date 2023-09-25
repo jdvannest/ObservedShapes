@@ -39,8 +39,9 @@ with pymp.Parallel(args.numproc) as pl:
 
         try:
             pynbody.analysis.angmom.faceon(halo)
+            rin = StellarShape[str(hid)]['rbins'][0]
             rout = StellarShape[str(hid)]['rbins'][-1]
-            rbins,ba,ca,angle,Es = pynbody.analysis.halo.halo_shape(halo,rout=rout)
+            rbins,ba,ca,angle,Es = pynbody.analysis.halo.halo_shape(halo,rin=rin,rout=rout)
             current['rbins'] = rbins
             current['ba'] = ba
             current['ca'] = ca

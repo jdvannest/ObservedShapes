@@ -12,8 +12,8 @@ verbose = '-v' if args.verbose else ''
 
 loop = True
 while loop:
-    type = input('Collect Images or Shapes (I/S): ')
-    if type in ['I','S']:
+    type = input('Collect Images, Shapes, or Gala (I/S/G): ')
+    if type in ['I','S','G']:
         loop = False 
 if type=='I':
     loop = True
@@ -27,6 +27,12 @@ elif type=='S':
         im = input('Stellar Shapes or DM Shapes (S/D): ')
         if im in ['S','D']: loop = False
     stype = '3D' if im=='S' else 'DM'
+elif type=='G':
+    loop = True
+    while loop:
+        im = input('Plot Density Profiles? (y/n): ')
+        if im in ['y','n']: loop = False
+    gen_im = '-i' if im=='y' else ''
 
 for feedback in ['BW','SB']:
     sims = pickle.load(open(f'SimulationInfo.{feedback}.pickle','rb'))
@@ -35,3 +41,5 @@ for feedback in ['BW','SB']:
             os.system(f"{config['python_path']} ImageCollection.py -f {feedback} -s {s} {gen_im} -n {args.numproc} {verbose} {overwrite}")
         elif type=='S':
             os.system(f"{config['python_path']} {stype}ShapeCollection.py -f {feedback} -s {s} -n {args.numproc} {verbose}")
+        elif type=='G':
+            os.system(f"{config['python_path']} GalaaCollection.py -f {feedback} -s {s} -n {args.numproc} {gen_im} {verbose}")
