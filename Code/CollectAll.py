@@ -42,4 +42,4 @@ for feedback in ['BW','SB']:
         elif type=='S':
             os.system(f"{config['python_path']} {stype}ShapeCollection.py -f {feedback} -s {s} -n {args.numproc} {verbose}")
         elif type=='G':
-            os.system(f"{config['python_path']} GalaaCollection.py -f {feedback} -s {s} -n {args.numproc} {gen_im} {verbose}")
+            os.system(f"{config['python_path']} GalaCollector.py -f {feedback} -s {s} -n {args.numproc} {gen_im} {verbose}")

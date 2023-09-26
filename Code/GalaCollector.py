@@ -1,3 +1,5 @@
+#https://gala.adrian.pw/en/latest/potential/scf-examples.html#computing-expansion-coefficients-from-particle-positions
+
 import argparse,pickle,pymp,pynbody,sys,warnings
 import numpy as np
 import gala.potential as gp
@@ -34,7 +36,7 @@ SCFData = pymp.shared.dict()
 myprint(f'{args.simulation} loaded.',clear=True)
 
 prog=pymp.shared.array((1,),dtype=int)
-print(f'\tCalculating Shapes: 0.00%')
+print(f'\tRunning SCF Fits: 0.00%')
 with pymp.Parallel(args.numproc) as pl:
     for i in pl.xrange(len(halos)):
         hid = halos[i]
@@ -52,7 +54,7 @@ with pymp.Parallel(args.numproc) as pl:
             ax.semilogx()
             ax.semilogy()
             ax.set_xlabel('R [kpc]',fontsize=15)
-            ax.set_ylabel(r'$\rho_{DM}$ [M$_{\odot}$ kpc$^{-3}$]',fontsize=15)
+            ax.set_ylabel(r'$\rho$ [M$_{\odot}$ kpc$^{-3}$]',fontsize=15)
             ax.plot([0,0],[0,0],c='k',label='DM Particles')
             ax.plot([0,0],[0,0],c='r',label='Star Particles')
             ax.plot([0,0],[0,0],c='b',label='Gala Model')
@@ -72,16 +74,19 @@ with pymp.Parallel(args.numproc) as pl:
             key = ['_DM','_Stellar'][i]
             current[f'S{key}'] = S
             current[f'T{key}'] = T
+            SCFData[str(hid)] = current
 
             if args.image:
                 pot = gp.SCFPotential(m=1.,r_s=r_s,Snlm=S,Tnlm=T)
                 if i==0: ax.set_ylim([1e2,10**(int(np.log10(p['density'][0]))+1)])
                 xyz2 = np.zeros((3, len(r)))
                 xyz2[0] = r
-                ax.plot(r,rho,c=['k','c'][i])
+                ax.plot(r,rho,c=['k','r'][i])
                 ax.plot(r, pot.density(xyz2),c='b')
-
-        f.savefig(f'../Images/Gala/{args.simulation}.{args.feedback}/{hid}.png',bbox_inches='tight',pad_inches=.1)
+                f.savefig(f'../Images/Gala/{args.simulation}.{args.feedback}/{hid}.png',bbox_inches='tight',pad_inches=.1)
+            
+        prog[0]+=1
+        myprint(f'\tRunning SCF Fits: {round(prog[0]/len(halos)*100,2)}%',clear=True)
 
 OutFile = {}
 for halo in halos:
