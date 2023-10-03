@@ -41,6 +41,8 @@ with pymp.Parallel(args.numproc) as pl:
         indeff = np.argmin(np.abs(prof['rbins']-Rhalf))
         veff = prof['v_circ'][indeff]
         MassData[str(hid)] = ( (Rhalf*1e3)*veff**2)/(4.3009172706e-3)
+        prog[0]+=1
+        print(f'\tCalculating Mdyn: {round(prog[0]/len(halos)*100,2)}%')
 
 OutFile = {}
 for halo in halos:

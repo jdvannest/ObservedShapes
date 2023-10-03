@@ -13,7 +13,7 @@ verbose = '-v' if args.verbose else ''
 loop = True
 while loop:
     type = input('Collect Images, Shapes, Gala, or Mdyn (I/S/G/M): ')
-    if type in ['I','S','G']:
+    if type in ['I','S','G','M']:
         loop = False 
 if type=='I':
     loop = True
