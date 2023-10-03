@@ -12,7 +12,7 @@ verbose = '-v' if args.verbose else ''
 
 loop = True
 while loop:
-    type = input('Collect Images, Shapes, or Gala (I/S/G): ')
+    type = input('Collect Images, Shapes, Gala, or Mdyn (I/S/G/M): ')
     if type in ['I','S','G']:
         loop = False 
 if type=='I':
@@ -43,3 +43,5 @@ for feedback in ['BW','SB']:
             os.system(f"{config['python_path']} {stype}ShapeCollection.py -f {feedback} -s {s} -n {args.numproc} {verbose}")
         elif type=='G':
             os.system(f"{config['python_path']} GalaCollector.py -f {feedback} -s {s} -n {args.numproc} {gen_im} {verbose}")
+        elif type=='M':
+            os.system(f"{config['python_path']} DynamicalMass.py -f {feedback} -s {s} -n {args.numproc}")

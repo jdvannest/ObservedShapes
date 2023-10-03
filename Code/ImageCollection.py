@@ -76,13 +76,6 @@ with pymp.Parallel(args.numproc) as pl:
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['lum_den'] = np.NaN
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['mags,v'] = np.NaN
                     current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['binarea'] = np.NaN
-                try:
-                    prof2 = pynbody.analysis.profile.Profile(halo,type='lin',min=.25,max=5*Rhalf,ndim=2,nbins=int((5*Rhalf)/0.1))
-                    indeff = np.argmin(np.abs(prof2['rbins']-Rhalf))
-                    veff = prof2['v_circ'][indeff]
-                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['Mdyn'] = ( (Rhalf*1e3)*veff**2)/(4.3009172706e-3)
-                except:
-                    current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['Mdyn'] = np.NaN
                 if not type(current_sb[f'x{xrotation*dx:03d}y{yrotation*dy:03d}']['sb,v']) is float:
                     try:
                         vband = prof['sb,v']
