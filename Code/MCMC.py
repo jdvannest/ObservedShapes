@@ -75,10 +75,11 @@ def ln_prob_fn(alpha,observed_dist,bin_size):
         return -np.inf
 
 #Initial position for MCMC walkers
-def initial(nwalk=32):
+def initial(nwalk=32,B_true=.75,C_true=.5):
     pos,i = np.zeros((nwalk,4)),0
     while i<nwalk:
-        test = (normrand(0.75,.2),normrand(.5,.2),normrand(.1,.05),normrand(.1,.05))
+        #test = (normrand(0.75,.2),normrand(.5,.2),normrand(.1,.05),normrand(.1,.05))
+        test = (normrand(B_true,.15),normrand(C_true,.15),.05,.05)
         if priors(test)==1:
             pos[i]=test
             i+=1
@@ -147,7 +148,8 @@ for halo in halos:
         try:
             pool = multiprocessing.Pool(args.numproc)
             sampler = emcee.EnsembleSampler(nwalk,ndim,ln_prob_fn,args=(dists[type],.04),pool=pool)
-            sampler.run_mcmc(initial(nwalk),nstep,progress=True)
+            start_pos = initial(nwalk) if np.isnan(alpha_true[0]) else initial(nwalk,alpha_true[0],alpha_true[1])
+            sampler.run_mcmc(start_pos,nstep,progress=True)
             samples = sampler.get_chain()
             flat_samples = sampler.get_chain(discard=burnin,flat=True)
 

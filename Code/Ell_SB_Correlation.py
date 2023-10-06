@@ -43,7 +43,7 @@ def randomorientation(base=30):
 
 
 n_itr = int(1e5)
-x = np.linspace(-1,1,500)
+xbins = np.linspace(-1,1,500)
 Xu = True
 EnvSplit = True
 Scatter = True
@@ -62,15 +62,16 @@ FIRE_x = FIRE_Data['X'].tolist()
 FIRE_y = FIRE_Data['Y'].tolist()
 
 
-ProfData,ProjData,MorphData,ShapeData,nhalo = {},{},{},{},0
+ProfData,ProjData,MorphData,ShapeData,MassData,nhalo = {},{},{},{},{},0
 for sim in sims:
     ProfData[sim]=pickle.load(open(f'../Data/{sim}.BW.Profiles.pickle','rb'))
     ProjData[sim]=pickle.load(open(f'../Data/{sim}.BW.ProjectedData.pickle','rb'))
     MorphData[sim]=pickle.load(open(f'../Data/{sim}.BW.3DShapes.pickle','rb'))
     ShapeData[sim]=pickle.load(open(f'../Data/{sim}.BW.ShapeData.pickle','rb'))
+    MassData[sim]=pickle.load(open(f'../Data/{sim}.BW.DynamicalMasses.pickle','rb'))
     nhalo+=len(ProfData[sim])
-Masses = pickle.load(open('../Data/BasicData/Marvel_DCJL.Masses.pickle','rb'))
-Lums = pickle.load(open('../Data/BasicData/Marvel_DCJL.Luminosity.pickle','rb'))
+#Masses = pickle.load(open('../Data/BasicData/Marvel_DCJL.Masses.pickle','rb'))
+#Lums = pickle.load(open('../Data/BasicData/Marvel_DCJL.Luminosity.pickle','rb'))
 
 #Get central lum_den values from array fit
 for sim in sims:
@@ -83,7 +84,14 @@ for sim in sims:
             Reff = ProfData[sim][halo]['x000y000']['Rhalf']
             indeff = np.argmin(np.abs(Reff - ProfData[sim][halo]['x000y000']['rbins']))
             lums = 10**(0.4*(4.8-ProfData[sim][halo][angle]['mags,v']))
-            ProfData[sim][halo][angle]['Lumeff'] = lums[:indeff+1].sum()
+            #ProfData[sim][halo][angle]['Lumeff'] = lums[:indeff+1].sum()
+            lumeff = lums[:indeff+1].sum()
+            ProfData[sim][halo][angle]['M/L'] = MassData[sim][halo]/lumeff
+
+# for sim in ProfData:
+#     for halo in ProfData[sim]:
+#         print(f"{sim}-{halo}: {ProfData[sim][halo]['x000y000']['M/L']}")
+
 
 #Xu Comparison
 if Xu:
@@ -140,7 +148,7 @@ if Xu:
         ax.axvspan(obs[0]-obs[1],obs[0]+obs[1],color=obs[2],alpha=.3)
 
     density = stats.gaussian_kde(r_dist)
-    ax.plot(x,density(x),c='k',linewidth=3,label='Marvel+DCJL Simulations')
+    ax.plot(xbins,density(xbins),c='k',linewidth=3,label='Marvel+DCJL Simulations')
     ax.set_ylim(bottom=0)
     ax.legend(loc='lower right',prop={'size':12})
     #plt.show()
@@ -231,11 +239,11 @@ if EnvSplit:
         ax.axvspan(obs[0]-obs[1],obs[0]+obs[1],color=obs[2],alpha=.3)
 
     density = stats.gaussian_kde(r_dist_c)
-    ax.plot(x,density(x),c='k',linewidth=3,label='Central')
+    ax.plot(xbins,density(xbins),c='k',linewidth=3,label='Central')
     density = stats.gaussian_kde(r_dist_s)
-    ax.plot(x,density(x),c='k',linewidth=3,linestyle='--',label='Satellite')
+    ax.plot(xbins,density(xbins),c='k',linewidth=3,linestyle='--',label='Satellite')
     density = stats.gaussian_kde(r_dist_b)
-    ax.plot(x,density(x),c='k',linewidth=3,linestyle=':',label='Backsplash')
+    ax.plot(xbins,density(xbins),c='k',linewidth=3,linestyle=':',label='Backsplash')
 
     ax.set_ylim(bottom=0)
     ax.legend(loc='lower left',prop={'size':12})
@@ -286,36 +294,37 @@ if Scatter:
             for angle in ProfData[sim][halo]:
                 ells.append(1-ProjData[sim][halo][angle]['b/a'])
                 sbs.append(ProfData[sim][halo][angle]['Sigma0'])
-                if ProfData[sim][halo]['x000y000']['Mdyn']/ProfData[sim][halo]['x000y000']['Lumeff']<100:
+                if ProfData[sim][halo]['x000y000']['M/L']<100:
                     ellsb.append(1-ProjData[sim][halo][angle]['b/a'])
                     sbsb.append(ProfData[sim][halo][angle]['Sigma0'])
                 else:
                     ellsd.append(1-ProjData[sim][halo][angle]['b/a'])
                     sbsd.append(ProfData[sim][halo][angle]['Sigma0'])
-            x.append(np.mean(sbs))
-            y.append(np.mean(ells))
-            xl.append(np.mean(sbs)-np.min(sbs))
-            xu.append(np.max(sbs)-np.mean(sbs))
-            yl.append(np.mean(ells)-np.min(ells))
-            yu.append(np.max(ells)-np.mean(ells))
-            if ProfData[sim][halo]['x000y000']['Mdyn']/ProfData[sim][halo]['x000y000']['Lumeff']<100:
-                bx.append(np.mean(sbsb))
-                by.append(np.mean(ellsb))
-                bxl.append(np.mean(sbsb)-np.min(sbsb))
-                bxu.append(np.max(sbsb)-np.mean(sbsb))
-                byl.append(np.mean(ellsb)-np.min(ellsb))
-                byu.append(np.max(ellsb)-np.mean(ellsb))
+            x.append(np.nanmean(sbs))
+            y.append(np.nanmean(ells))
+            xl.append(np.nanmean(sbs)-np.min(sbs))
+            xu.append(np.max(sbs)-np.nanmean(sbs))
+            yl.append(np.nanmean(ells)-np.min(ells))
+            yu.append(np.max(ells)-np.nanmean(ells))
+            #print(f"{ProfData[sim][halo]['x000y000']['M/L']}")
+            if ProfData[sim][halo]['x000y000']['M/L']<100:
+                bx.append(np.nanmean(sbsb))
+                by.append(np.nanmean(ellsb))
+                bxl.append(np.nanmean(sbsb)-np.min(sbsb))
+                bxu.append(np.max(sbsb)-np.nanmean(sbsb))
+                byl.append(np.nanmean(ellsb)-np.min(ellsb))
+                byu.append(np.max(ellsb)-np.nanmean(ellsb))
             else:
-                dx.append(np.mean(sbsd))
-                dy.append(np.mean(ellsd))
-                dxl.append(np.mean(sbsd)-np.min(sbsd))
-                dxu.append(np.max(sbsd)-np.mean(sbsd))
-                dyl.append(np.mean(ellsd)-np.min(ellsd))
-                dyu.append(np.max(ellsd)-np.mean(ellsd))
-
+                dx.append(np.nanmean(sbsd))
+                dy.append(np.nanmean(ellsd))
+                dxl.append(np.nanmean(sbsd)-np.min(sbsd))
+                dxu.append(np.max(sbsd)-np.nanmean(sbsd))
+                dyl.append(np.nanmean(ellsd)-np.min(ellsd))
+                dyu.append(np.max(ellsd)-np.nanmean(ellsd))
+            
     f,ax = plt.subplots(1,1,figsize=(8,6))
     ax.set_ylim([0,1])
-    ax.set_xlim([4e-2,1e3])
+    ax.set_xlim([2e-2,1e3])
     ax.semilogx()
     ax.set_yticks([0,.2,.4,.6,.8])
     ax.tick_params(which='both',labelsize=15)
@@ -344,7 +353,7 @@ if Scatter:
 
     f,ax = plt.subplots(1,1,figsize=(8,6))
     ax.set_ylim([0,1])
-    ax.set_xlim([4e-2,1e3])
+    ax.set_xlim([2e-2,1e3])
     ax.semilogx()
     ax.set_yticks([0,.2,.4,.6,.8])
     ax.tick_params(which='both',labelsize=15)
@@ -381,7 +390,7 @@ if DimSplit:
         for sim in ProfData:
             for halo in ProfData[sim]:
                 angle = randomorientation()
-                if ProfData[sim][halo]['x000y000']['Mdyn']/ProfData[sim][halo]['x000y000']['Lumeff']<100:
+                if ProfData[sim][halo][angle]['M/L']<100:
                     ellb.append(1-PlotDict[sim][halo][angle]['b/a'])
                     sbb.append(ProfData[sim][halo][angle]['Sigma0'])
                 else:
@@ -405,9 +414,9 @@ if DimSplit:
         ax.axvspan(obs[0]-obs[1],obs[0]+obs[1],color=obs[2],alpha=.3)
 
     density = stats.gaussian_kde(r_dist_b)
-    ax.plot(x,density(x),c='k',linewidth=3,label=r'Sim $M/L<100M_\odot/L_\odot$')
+    ax.plot(xbins,density(xbins),c='k',linewidth=3,label=r'Sim $M/L<100M_\odot/L_\odot$')
     density = stats.gaussian_kde(r_dist_d)
-    ax.plot(x,density(x),c='k',linewidth=3,linestyle='--',label=r'Sim $M/L>100M_\odot/L_\odot$')
+    ax.plot(xbins,density(xbins),c='k',linewidth=3,linestyle='--',label=r'Sim $M/L>100M_\odot/L_\odot$')
     ax.set_ylim(bottom=0)
     ax.legend(loc='lower right',prop={'size':12})
     #plt.show()
