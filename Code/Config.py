@@ -29,35 +29,43 @@ dcjl_path = '/myhome2/users/munshi/e12gals/'
 Sims = {
     'cptmarvel' : {
         'path' : marvel_path+'cptmarvel.cosmo25cmb.4096g5HbwK1BH/cptmarvel.cosmo25cmb.4096g5HbwK1BH.004096/cptmarvel.cosmo25cmb.4096g5HbwK1BH.004096',
-        'halos' : [1,2,3,5,6,7,10,11,13]#,14,24]
+        'halos' : [1,2,3,5,6,7,10,11,13],#,14,24]
+        'goodhalos' : [1,2,3,5,6,7,10]
     },
     'elektra' : {
         'path' : marvel_path+'elektra.cosmo25cmb.4096g5HbwK1BH/elektra.cosmo25cmb.4096g5HbwK1BH.004096/elektra.cosmo25cmb.4096g5HbwK1BH.004096',
-        'halos' : [1,2,3,4,5,8,9,10,12,17,36,64]#,11]
+        'halos' : [1,2,3,4,5,8,9,10,12,17,36,64],#,11]
+        'goodhalos' : [1,2,3,4,5,8,9,10]
     },
     'storm' : {
         'path' : marvel_path+'storm.cosmo25cmb.4096g5HbwK1BH/storm.cosmo25cmb.4096g5HbwK1BH.004096/storm.cosmo25cmb.4096g5HbwK1BH.004096',
-        'halos' : [1,2,3,4,5,6,7,8,14,15,22,23,31,37,44,48,55,118]#,10,11,12]
+        'halos' : [1,2,3,4,5,6,7,8,14,15,22,23,31,37,44,48,55,118],#,10,11,12]
+        'goodhalos' : [1,2,3,4,5,6,7,8,14,31,37]
     },
     'rogue' : {
         'path' : marvel_path+'rogue.cosmo25cmb.4096g5HbwK1BH/rogue.cosmo25cmb.4096g5HbwK1BH.004096/rogue.cosmo25cmb.4096g5HbwK1BH.004096',
-        'halos' : [1,3,7,8,10,11,12,15,16,17,28,31,116]#,37,58]
+        'halos' : [1,3,7,8,10,11,12,15,16,17,28,31,116],#,37,58]
+        'goodhalos' : [1,3,7,8,10,11,12,15,28]
     },
     'h148' : {
         'path' : dcjl_path+'h148.cosmo50PLK.3072g3HbwK1BH/h148.cosmo50PLK.3072g3HbwK1BH.004096/h148.cosmo50PLK.3072g3HbwK1BH.004096',
         'halos' : [2,3,4,6,7,11,12,13,15,20,23,27,28,33,34,38,65,86,114],#29,37,41,43,51,59,75,94,109,122]
+        'goodhalos' : [2,3,4,6,7,11,12,23,27,38,65]
     },
     'h229' : {
         'path' : dcjl_path+'h229.cosmo50PLK.3072gst5HbwK1BH/h229.cosmo50PLK.3072gst5HbwK1BH.004096/h229.cosmo50PLK.3072gst5HbwK1BH.004096',
-        'halos' : [2,3,6,14,18,20,22,47,48,49,92]#15,25,33,52,57,62,89,127]
+        'halos' : [2,3,6,14,18,20,22,47,48,49,92],#15,25,33,52,57,62,89,127]
+        'goodhalos' : [2,3,6,18]
     },
     'h242' : {
         'path' : dcjl_path+'h242.cosmo50PLK.3072gst5HbwK1BH/h242.cosmo50PLK.3072gst5HbwK1BH.004096/h242.cosmo50PLK.3072gst5HbwK1BH.004096',
-        'halos' : [8,10,21,26,30,34,38,42,63,70,81]#,44,45,138]
+        'halos' : [8,10,21,26,30,34,38,42,63,70,81],#,44,45,138]
+        'goodhalos' : [8,10]
     },
     'h329' : {
         'path' : dcjl_path+'h329.cosmo50PLK.3072gst5HbwK1BH/h329.cosmo50PLK.3072gst5HbwK1BH.004096/h329.cosmo50PLK.3072gst5HbwK1BH.004096',
-        'halos' : [7,29,37,115,117]#,30,53,9,127]
+        'halos' : [7,29,37,115,117],#,30,53,9,127]
+        'goodhalos' : [7]
     }
 }
 

@@ -11,18 +11,18 @@ for sim in SimInfo:
     pynb = pickle.load(open(f'../Data/{sim}.BW.3DShapes.pickle','rb'))
     mcmc = pickle.load(open(f'../Data/{sim}.BW.MCMC.pickle','rb'))
 
-    for halo in pynb:
-        Reff = prof[halo]['x000y000']['Rhalf']
+    for halo in SimInfo[sim]['goodhalos']:
+        Reff = prof[str(halo)]['x000y000']['Rhalf']
         try:    
-            ind_eff = np.argmin(abs(pynb[halo]['rbins']-Reff))
-            pB.append(pynb[halo]['ba'][ind_eff])
-            pC.append(pynb[halo]['ca'][ind_eff])
+            ind_eff = np.argmin(abs(pynb[str(halo)]['rbins']-Reff))
+            pB.append(pynb[str(halo)]['ba'][ind_eff])
+            pC.append(pynb[str(halo)]['ca'][ind_eff])
         except:
             pB.append(np.NaN)
             pC.append(np.NaN)
         try:
-            mB.append(mcmc[halo]['Isophote']['alpha_50'][0])
-            mC.append(mcmc[halo]['Isophote']['alpha_50'][1])
+            mB.append(mcmc[str(halo)]['Isophote']['alpha_50'][0])
+            mC.append(mcmc[str(halo)]['Isophote']['alpha_50'][1])
         except:
             mB.append(np.NaN)
             mC.append(np.NaN)

@@ -24,6 +24,6 @@ for feedback in ['BW','SB']:
             os.system(f'tar -czf {halo}.Intrinsic.tar.gz *.Intrinsic.png')
             if erase: os.system('rm *.Intrinsic.png')
 os.chdir(f'{gitdir}Images/EllipseComparison/')
-os.system(f'tar -czf EllipseComparison.tar.gz *0.png')
-if erase: os.system('rm *0.png')
+os.system(f'tar -czf EllipseComparison.tar.gz Individual/*0.png')
+if erase: os.system('rm Individual/*0.png')
 print('Done')

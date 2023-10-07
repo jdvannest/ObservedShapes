@@ -201,10 +201,10 @@ for halo in halos:
             #Write out alpha data
             alpha = {}
             for i in [16,50,84]:
-                alpha[f'alpha_{i}'] = (np.percentile(flat_samples[:, 0],i/100),
-                                    np.percentile(flat_samples[:, 1],i/100),
-                                    np.percentile(flat_samples[:, 2],i/100),
-                                    np.percentile(flat_samples[:, 3],i/100))
+                alpha[f'alpha_{i}'] = (np.percentile(flat_samples[:, 0],i),
+                                    np.percentile(flat_samples[:, 1],i),
+                                    np.percentile(flat_samples[:, 2],i),
+                                    np.percentile(flat_samples[:, 3],i))
             
 
             #Plot distribtions
