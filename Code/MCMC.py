@@ -79,7 +79,7 @@ def initial(nwalk=32,B_true=.75,C_true=.5):
     pos,i = np.zeros((nwalk,4)),0
     while i<nwalk:
         #test = (normrand(0.75,.2),normrand(.5,.2),normrand(.1,.05),normrand(.1,.05))
-        test = (normrand(B_true,.15),normrand(C_true,.15),.05,.05)
+        test = (normrand(B_true,.15),normrand(C_true,.15),normrand(.05,.01),normrand(.05,.01))
         if priors(test)==1:
             pos[i]=test
             i+=1
@@ -113,7 +113,7 @@ haloprog = 0
 #print(f'Running {args.simulation}: 0.00%')
 for halo in halos:
     print(f'Running {args.simulation} - {halo}')
-    if not args.overwrite and halo in MCMCData:continue
+    #if not args.overwrite and halo in MCMCData:continue
     MCMCData[str(halo)] = {}
     for type in ['Isophote','Projected']:
         alpha = {}

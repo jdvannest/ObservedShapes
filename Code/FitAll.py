@@ -3,6 +3,7 @@ config = pickle.load(open('Config.pickle','rb'))
 
 parser = argparse.ArgumentParser(description='Fit Isophotes to all generated images.')
 parser.add_argument('-n','--numproc',type=int,required=True,help='Number of processors to use')
+parser.add_argument('-o','--overwrite',action='store_true',help='Overwrite existing data')
 args = parser.parse_args()
 
 loop = True
@@ -17,8 +18,10 @@ while loop:
         else:
             script = 'MCMC.py'
 
+over = '-o' if args.overwrite else ''
+
 for feedback in ['BW','SB']:
     sims = pickle.load(open(f'SimulationInfo.{feedback}.pickle','rb'))
     for s in sims:
-        os.system(f"{config['python_path']} {script} -f {feedback} -s {s} -n {args.numproc}")
+        os.system(f"{config['python_path']} {script} -f {feedback} -s {s} -n {args.numproc} {over}")
         #os.system(f"/usr/local/anaconda/bin/python {script} -f {feedback} -s {s} -n {args.numproc}")
