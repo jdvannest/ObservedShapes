@@ -62,7 +62,7 @@ plots,legend,norms,fname =[[plot_diff,plot_delta],[r'$q_{proj}-q_{iso}$',r'$\Del
                            [plt.Normalize(0,.2),plt.Normalize(0,.2)],['Differentials','Deltas']]
 
 for i in [0,1]:
-    f,ax = plt.subplots(1,1,figsize=(12,8))
+    f,ax = plt.subplots(1,1,figsize=(12,5))
     ax.tick_params(labelsize=15)
     ax.set_xticks(np.arange(0,375,30))
     ax.set_yticks(np.arange(0,195,30))
