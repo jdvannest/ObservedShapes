@@ -35,12 +35,12 @@ Sims = {
     'elektra' : {
         'path' : marvel_path+'elektra.cosmo25cmb.4096g5HbwK1BH/elektra.cosmo25cmb.4096g5HbwK1BH.004096/elektra.cosmo25cmb.4096g5HbwK1BH.004096',
         'halos' : [1,2,3,4,5,8,9,10,12,17,36,64],#,11]
-        'goodhalos' : [1,2,3,4,5,8,9,10]
+        'goodhalos' : [1,2,3,4,5,9,10]
     },
     'storm' : {
         'path' : marvel_path+'storm.cosmo25cmb.4096g5HbwK1BH/storm.cosmo25cmb.4096g5HbwK1BH.004096/storm.cosmo25cmb.4096g5HbwK1BH.004096',
         'halos' : [1,2,3,4,5,6,7,8,14,15,22,23,31,37,44,48,55,118],#,10,11,12]
-        'goodhalos' : [1,2,3,4,5,6,7,8,14,31,37]
+        'goodhalos' : [1,2,3,4,5,6,7,8,14,31]
     },
     'rogue' : {
         'path' : marvel_path+'rogue.cosmo25cmb.4096g5HbwK1BH/rogue.cosmo25cmb.4096g5HbwK1BH.004096/rogue.cosmo25cmb.4096g5HbwK1BH.004096',

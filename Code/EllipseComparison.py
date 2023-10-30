@@ -7,6 +7,18 @@ PaperFig = True
 
 mass_data = pickle.load(open('../Data/BasicData/Marvel_DCJL.Masses.pickle','rb'))
 SimInfo = pickle.load(open(f'SimulationInfo.BW.pickle','rb'))
+cens,sats,bsps = [],[],[]
+with open('../Data/BasicData/HaloTypes.txt') as f:
+    lines = f.readlines()
+for line in lines:
+    l = line.split('\t')
+    if l[0] in SimInfo:
+        if l[-2]=='Central' and int(l[1]) in SimInfo[l[0]]['goodhalos']: cens.append((l[0],l[1]))
+        elif l[-2]=='Satellite' and int(l[1]) in SimInfo[l[0]]['goodhalos']: sats.append((l[0],l[1]))
+        elif l[-2]=='Backsplash' and int(l[1]) in SimInfo[l[0]]['goodhalos']: bsps.append((l[0],l[1]))
+
+
+
 xang = np.arange(0,180,30)
 yang = np.arange(0,360,30)
 Yedge = np.arange(-15,185,30)
@@ -14,7 +26,8 @@ Xedge = np.arange(-15,375,30)
 plot_diff = np.zeros((len(xang),len(yang)))
 plot_delta = np.zeros((len(xang),len(yang)))
 
-pr_f,ob_f,pr_s,ob_s = [],[],[],[]
+pr_f_c,ob_f_c,pr_s_c,ob_s_c = [],[],[],[]
+pr_f_s,ob_f_s,pr_s_s,ob_s_s = [],[],[],[]
 for x in np.arange(len(xang)):
     for y in np.arange(len(yang)):
 
@@ -33,11 +46,19 @@ for x in np.arange(len(xang)):
                 diffs.append(pr-ob)
                 deltas.append(abs(pr-ob)/np.sqrt(2))
                 if int(xang[x])==0 and int(yang[y])==0:
-                    pr_f.append(pr)
-                    ob_f.append(ob)
+                    if (sim,str(halo)) in sats:
+                        pr_f_s.append(pr)
+                        ob_f_s.append(ob)
+                    else:
+                        pr_f_c.append(pr)
+                        ob_f_c.append(ob)
                 elif int(xang[x])==90 and int(yang[y])==0:
-                    pr_s.append(pr)
-                    ob_s.append(ob)
+                    if (sim,str(halo)) in sats:
+                        pr_s_s.append(pr)
+                        ob_s_s.append(ob)
+                    else:
+                        pr_s_c.append(pr)
+                        ob_s_c.append(ob)
 
         if IndPlot:
             f,ax = plt.subplots(1,1,figsize=(5,5))
@@ -91,15 +112,18 @@ if PaperFig:
     f,ax = plt.subplots(1,1,figsize=(5,5))
     ax.set_xlim([0,1])
     ax.set_ylim([0,1])
-    ax.fill_between([0,1],[-.1,.9],[.1,1.1],color='0.75',alpha=.3)
-    ax.plot([0,1],[0,1],c='0.5',linestyle='--')
+    ax.fill_between([0,1],[-.1,.9],[.1,1.1],color='0.75',alpha=.3,zorder=0)
+    ax.plot([0,1],[0,1],c='0.5',linestyle='--',zorder=0)
     ax.set_xlabel(r'$q_{proj}$',fontsize=20)
     ax.set_ylabel(r'$q_{iso}$',fontsize=20)
     ax.tick_params(which='both',labelsize=15)
 
-    ax.scatter(pr_f,ob_f,c='k',label=r'$(\theta,\phi)=(0^o,0^o)$')
-    ax.scatter(pr_s,ob_s,c='r',label=r'$(\theta,\phi)=(90^o,0^o)$')
+    ax.scatter(pr_f_c,ob_f_c,c='k',label=r'$(\theta,\phi)=(0^o,0^o)$')
+    ax.scatter(pr_f_s,ob_f_s,c='k',marker='v')
+    ax.scatter(pr_s_c,ob_s_c,c='r',label=r'$(\theta,\phi)=(90^o,0^o)$')
+    ax.scatter(pr_s_s,ob_s_s,c='r',marker='v')
+    ax.scatter(-1,-1,c='.5',marker='v',label='Satellites')
 
-    ax.legend(loc='lower left',prop={'size':15})
+    ax.legend(loc=(.01,.63),prop={'size':15})
     f.savefig(f'../Images/EllipseComparison/EllipseComparison.png',bbox_inches='tight',pad_inches=.1)
     plt.close()
